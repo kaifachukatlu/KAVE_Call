@@ -36,6 +36,14 @@ class VoiceCommandParserTest {
     }
 
     @Test
+    fun urduAndTeluguCommands() {
+        listOf("ہاں", "اٹھاؤ", "اٹھا لو", "ఎత్తు", "ఎత్తండి", "అవును", "సరే")
+            .forEach { assertEquals(it, VoiceCommand.ANSWER, VoiceCommandParser.parse(it)) }
+        listOf("نہیں", "مت اٹھاؤ", "کاٹ دو", "వద్దు", "ఎత్తొద్దు", "కట్ చేయి", "వద్దు ఎత్తు")
+            .forEach { assertEquals(it, VoiceCommand.REJECT, VoiceCommandParser.parse(it)) }
+    }
+
+    @Test
     fun ambiguousOrUnrelatedReturnsNull() {
         assertNull(VoiceCommandParser.parse("yes no"))
         assertNull(VoiceCommandParser.parse("don't reject"))

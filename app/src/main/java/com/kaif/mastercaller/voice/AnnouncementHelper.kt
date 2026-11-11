@@ -12,6 +12,7 @@ import android.speech.tts.Voice
 import android.util.Log
 import com.kaif.mastercaller.data.AppSettings
 import com.kaif.mastercaller.data.SettingsRepository
+import com.kaif.mastercaller.data.VoicePreference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,9 +87,12 @@ class AnnouncementHelper(
                 .collect { pkg -> initEngine(pkg) }
         }
         scope.launch {
-            settingsRepository.settingsFlow.map { Triple(it.languageTag, it.voiceName, it.enginePackage) }
-                .distinctUntilChanged()
-                .collect { refreshVoices() }
+            settingsRepository.settingsFlow
+                .distinctUntilChanged { a, b ->
+                    a.languageTag == b.languageTag && a.voiceName == b.voiceName &&
+                        a.enginePackage == b.enginePackage && a.voicePreference == b.voicePreference
+                }
+                .collect { refreshVoices(it) }
         }
     }
 
@@ -101,17 +105,28 @@ class AnnouncementHelper(
                 onDone(false)
                 return@whenReady
             }
-            applySettings(engine, settingsRepository.settings.value, voiceOverride)
+            val settings = settingsRepository.settings.value
             engine.setAudioAttributes(attributesFor(purpose))
-            val id = "mc-utt-${++counter}"
-            callbacks[id] = onDone
-            val result = engine.speak(text, TextToSpeech.QUEUE_FLUSH, Bundle(), id)
-            if (result != TextToSpeech.SUCCESS) {
-                callbacks.remove(id)?.invoke(false)
-                return@whenReady
+            // In non-English languages, phone digits are spoken by an English voice (quicker to understand).
+            val english = settings.languageTag.startsWith("en", ignoreCase = true)
+            val parts = if (english) {
+                listOf(SpeechSegment(text, english = false))
+            } else {
+                AnnouncementText.segments(text).ifEmpty { listOf(SpeechSegment(text, english = false)) }
+            }
+            val base = "mc-utt-${++counter}"
+            val lastId = "$base-${parts.lastIndex}"
+            callbacks[lastId] = onDone
+            parts.forEachIndexed { i, part ->
+                if (part.english && !english) applyEnglishDigits(engine, settings) else applySettings(engine, settings, voiceOverride)
+                val mode = if (i == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
+                if (engine.speak(part.text, mode, Bundle(), "$base-$i") != TextToSpeech.SUCCESS) {
+                    callbacks.remove(lastId)?.invoke(false)
+                    return@whenReady
+                }
             }
             // Safety net: some engines never report completion.
-            handler.postDelayed({ callbacks.remove(id)?.invoke(false) }, SAFETY_TIMEOUT_MS)
+            handler.postDelayed({ callbacks.remove(lastId)?.invoke(false) }, SAFETY_TIMEOUT_MS)
         }
     }
 
@@ -224,10 +239,9 @@ class AnnouncementHelper(
 
     // --- voices --------------------------------------------------------------------------------
 
-    private fun refreshVoices() {
+    private fun refreshVoices(settings: AppSettings = settingsRepository.settings.value) {
         val engine = tts ?: return
         if (ttsState != TtsState.READY) return
-        val settings = settingsRepository.settings.value
         val locale = Locale.forLanguageTag(settings.languageTag)
 
         platformVoices = try {
@@ -241,7 +255,7 @@ class AnnouncementHelper(
             .map { it.toOption() }
             .sortedWith(
                 compareByDescending<VoiceOption> { it.localeTag.equals(locale.toLanguageTag(), ignoreCase = true) }
-                    .thenByDescending { it.gender == VoiceGender.FEMALE }
+                    .thenByDescending { it.gender == wantedGender(settings) }
                     .thenBy { it.notInstalled }
                     .thenBy { it.requiresNetwork }
                     .thenByDescending { it.quality }
@@ -264,15 +278,41 @@ class AnnouncementHelper(
         )
     }
 
-    /** User's saved voice if still installed, else the best female-sounding on-device voice. */
+    private fun wantedGender(settings: AppSettings): VoiceGender =
+        if (settings.voicePreference == VoicePreference.MALE) VoiceGender.MALE else VoiceGender.FEMALE
+
+    /** User's saved voice if still installed, else the best on-device voice of the chosen gender. */
     private fun pickVoice(settings: AppSettings, options: List<VoiceOption>): VoiceOption? {
         val tag = Locale.forLanguageTag(settings.languageTag).toLanguageTag()
+        val want = wantedGender(settings)
         val usable = options.filter { !it.notInstalled }
         return options.firstOrNull { it.name == settings.voiceName && !it.notInstalled }
-            ?: usable.firstOrNull { it.gender == VoiceGender.FEMALE && !it.requiresNetwork && it.localeTag.equals(tag, true) }
-            ?: usable.firstOrNull { it.gender == VoiceGender.FEMALE && !it.requiresNetwork }
-            ?: usable.firstOrNull { it.gender == VoiceGender.FEMALE }
+            ?: usable.firstOrNull { it.gender == want && !it.requiresNetwork && it.localeTag.equals(tag, true) }
+            ?: usable.firstOrNull { it.gender == want && !it.requiresNetwork }
+            ?: usable.firstOrNull { it.gender == want }
+            ?: usable.firstOrNull { it.gender == VoiceGender.UNKNOWN && !it.requiresNetwork }
             ?: usable.firstOrNull { !it.requiresNetwork && it.localeTag.equals(tag, true) }
+    }
+
+    /** English voice (same gender, Indian English preferred) used only for reading phone digits. */
+    private fun applyEnglishDigits(engine: TextToSpeech, settings: AppSettings) {
+        try {
+            val want = wantedGender(settings)
+            val english = platformVoices
+                .filter { it.locale.language == "en" && !it.isNetworkConnectionRequired }
+                .filter { v -> !(v.features ?: emptySet()).contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) }
+                .sortedWith(
+                    compareByDescending<Voice> { it.locale.country == "IN" }
+                        .thenByDescending { VoiceGenderGuess.guess(it.name, it.features ?: emptySet()) == want }
+                        .thenByDescending { it.quality },
+                )
+                .firstOrNull()
+            if (english != null) engine.setVoice(english) else engine.setLanguage(Locale.forLanguageTag("en-IN"))
+            engine.setSpeechRate(settings.speechRate)
+            engine.setPitch(settings.pitch)
+        } catch (e: Exception) {
+            Log.w(TAG, "English digit voice failed", e)
+        }
     }
 
     private fun applySettings(engine: TextToSpeech, settings: AppSettings, voiceOverride: String?) {

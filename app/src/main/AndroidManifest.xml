@@ -6,6 +6,8 @@
 
     <!-- Resolve caller names from saved contacts (read locally, never uploaded). -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Optional: save a call wallpaper as the contact's photo so Google Phone / Contacts show it too. -->
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <!-- Short, visible listening window for "Pick up" / "Reject" voice commands. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Incoming / ongoing call notifications. -->

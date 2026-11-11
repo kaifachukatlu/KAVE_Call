@@ -14,12 +14,20 @@ Everything runs on the phone. There are no servers, accounts or paid APIs, and n
 
 ---
 
+### Languages & voices
+
+* Announcements in **English, Hindi, Urdu and Telugu**, with matching voice commands
+  (for example "pick up" / "उठाओ" / "اٹھاؤ" / "ఎత్తు", and "reject" / "नहीं" / "نہیں" / "వద్దు").
+* **Female or male** announcer (auto-picked from installed voices), or choose a specific voice.
+* For unknown callers the number is read **digit by digit in English**, even in the other languages,
+  because English digits are quicker to follow.
+
 ### Call wallpapers
 
 During a call, the caller's photo fills the screen. The app picks the first one available:
 
-1. A photo you set **inside KAVÉ Call** (*Home → Wallpapers*). It is stored only in the app, and your
-   Contacts are not changed.
+1. A photo you set **inside KAVÉ Call** (*Home → Wallpapers*). With *Also update in Google Phone* on
+   (the default), it is also saved as the contact's photo, so Google Phone and Contacts show it too.
 2. The contact's own photo from your Contacts / Google Phone app. Updates there are picked up automatically
    on the next call.
 3. Your **default wallpaper** from *Wallpapers*, used for unknown numbers and contacts without a photo.

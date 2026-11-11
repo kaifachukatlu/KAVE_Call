@@ -15,6 +15,7 @@ object VoiceGenderGuess {
         "aua", "auc", // en-AU
         "ena", "enc", "ahp", // en-IN
         "hia", "hic", // hi-IN
+        "tef", // te-IN
     )
     private val googleMale = setOf(
         "iol", "iom", "tpd",
@@ -22,6 +23,7 @@ object VoiceGenderGuess {
         "aub", "aud",
         "end", "ene",
         "hid", "hie",
+        "tem",
     )
 
     private val googleCode = Regex("-x-([a-z]{3})")

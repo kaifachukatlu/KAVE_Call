@@ -60,6 +60,53 @@ class ContactHelper(context: Context) {
         }
     }
 
+    fun canWriteContacts(): Boolean =
+        ContextCompat.checkSelfPermission(appContext, Manifest.permission.WRITE_CONTACTS) ==
+            PackageManager.PERMISSION_GRANTED
+
+    /**
+     * Saves [jpeg] as the contact's photo in the phone's contacts database, so Google Phone, Contacts and
+     * (for Google-synced contacts) your Google account show it too. Writes to the contact's Google account
+     * entry when it has one, otherwise to the phone-local entry; never to WhatsApp/Telegram-style entries.
+     * Call off the main thread.
+     */
+    fun writeContactPhoto(lookupKey: String, jpeg: java.io.File): Boolean {
+        if (!canWriteContacts() || !jpeg.exists()) return false
+        return try {
+            val resolver = appContext.contentResolver
+            val contactUri = ContactsContract.Contacts.lookupContact(
+                resolver, Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey),
+            ) ?: return false
+            val contactId = android.content.ContentUris.parseId(contactUri)
+            val rawId = pickWritableRawContact(contactId) ?: return false
+            val photoUri = Uri.withAppendedPath(
+                android.content.ContentUris.withAppendedId(ContactsContract.RawContacts.CONTENT_URI, rawId),
+                ContactsContract.RawContacts.DisplayPhoto.CONTENT_DIRECTORY,
+            )
+            resolver.openAssetFileDescriptor(photoUri, "rw")?.use { fd ->
+                fd.createOutputStream().use { out -> jpeg.inputStream().use { it.copyTo(out) } }
+            } ?: return false
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Writing contact photo failed", e)
+            false
+        }
+    }
+
+    private fun pickWritableRawContact(contactId: Long): Long? {
+        val skip = listOf("whatsapp", "telegram", "signal", "viber", "skype", "facebook", "duo", "meet")
+        val rows = ArrayList<Pair<Long, String>>()
+        appContext.contentResolver.query(
+            ContactsContract.RawContacts.CONTENT_URI,
+            arrayOf(ContactsContract.RawContacts._ID, ContactsContract.RawContacts.ACCOUNT_TYPE),
+            "${ContactsContract.RawContacts.CONTACT_ID}=? AND ${ContactsContract.RawContacts.DELETED}=0",
+            arrayOf(contactId.toString()),
+            null,
+        )?.use { c -> while (c.moveToNext()) rows += c.getLong(0) to (c.getString(1) ?: "") }
+        val usable = rows.filter { (_, type) -> skip.none { type.contains(it, ignoreCase = true) } }
+        return (usable.firstOrNull { it.second == "com.google" } ?: usable.firstOrNull())?.first
+    }
+
     /** Lookup key + display name for a contact returned by the system contact picker. */
     fun pickedContact(contactUri: Uri): Pair<String, String>? = try {
         val projection = arrayOf(ContactsContract.Contacts.LOOKUP_KEY, ContactsContract.Contacts.DISPLAY_NAME)

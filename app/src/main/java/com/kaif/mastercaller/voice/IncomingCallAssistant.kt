@@ -155,8 +155,8 @@ class IncomingCallAssistant(context: Context) {
     private suspend fun announceAndListen(callId: String, settings: AppSettings, listen: Boolean) {
         if (!isStillRinging(callId)) return
         val info = CallStateManager.find(callId) ?: return
-        val text = AnnouncementText.forCaller(settings, info.contactName)
-        val spoken = AnnouncementText.forCaller(settings, info.contactName, spoken = true)
+        val text = AnnouncementText.forCaller(settings, info.contactName, number = info.formattedNumber)
+        val spoken = AnnouncementText.forCaller(settings, info.contactName, spoken = true, number = info.number)
         ringer.pauseRingtone()
         try {
             setPhase(callId, AssistantPhase.Announcing(text))

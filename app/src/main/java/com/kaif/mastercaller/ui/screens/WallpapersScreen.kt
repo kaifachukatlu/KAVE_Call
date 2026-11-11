@@ -54,6 +54,7 @@ import com.kaif.mastercaller.ui.components.PrimaryButton
 import com.kaif.mastercaller.ui.components.ScreenHeader
 import com.kaif.mastercaller.ui.components.SecondaryButton
 import com.kaif.mastercaller.ui.components.SectionLabel
+import com.kaif.mastercaller.ui.components.SettingSwitchRow
 import com.kaif.mastercaller.ui.theme.McColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -78,6 +79,41 @@ fun WallpapersScreen(onBack: () -> Unit) {
     var target by remember { mutableStateOf<PhotoTarget?>(null) }
     var busy by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<PosterEdit?>(null) }
+    val settings by app.settingsRepository.settings.collectAsStateWithLifecycle()
+
+    // --- Copy wallpapers into the real contact photo (Google Phone / Contacts) ---------------------
+    var pendingSync by remember { mutableStateOf<List<String>>(emptyList()) }
+    val doSync: (List<String>) -> Unit = { keys ->
+        app.appScope.launch {
+            val done = withContext(Dispatchers.IO) {
+                keys.count { k -> store.fileForContact(k)?.let { app.contacts.writeContactPhoto(k, it) } == true }
+            }
+            Toast.makeText(
+                context,
+                if (done > 0) "Also updated in Google Phone & Contacts" else "Couldn't update the contact photo",
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+    val writePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val keys = pendingSync
+        pendingSync = emptyList()
+        if (granted) {
+            doSync(keys)
+        } else {
+            Toast.makeText(context, "Saved in KAVÉ only. Allow \"edit contacts\" to update Google Phone too.", Toast.LENGTH_LONG).show()
+        }
+    }
+    val requestSync: (List<String>) -> Unit = { keys ->
+        if (keys.isNotEmpty()) {
+            if (app.contacts.canWriteContacts()) {
+                doSync(keys)
+            } else {
+                pendingSync = keys
+                writePermission.launch(android.Manifest.permission.WRITE_CONTACTS)
+            }
+        }
+    }
 
     editing?.let { e ->
         PosterEditor(
@@ -118,6 +154,9 @@ fun WallpapersScreen(onBack: () -> Unit) {
                 Toast.makeText(context, "Couldn't use that photo, try another", Toast.LENGTH_SHORT).show()
                 return@launch
             }
+            if (t is PhotoTarget.Contact && app.settingsRepository.settings.value.syncWallpaperToContacts) {
+                requestSync(listOf(t.lookupKey))
+            }
             // Go straight into the poster editor, like iOS.
             when (t) {
                 PhotoTarget.Default -> store.default()?.let { editDefault(it) }
@@ -151,12 +190,28 @@ fun WallpapersScreen(onBack: () -> Unit) {
             item {
                 ScreenHeader("Call wallpapers", "Photos shown full-screen when someone calls", onBack)
                 McCard {
+                    SettingSwitchRow(
+                        title = "Also update in Google Phone",
+                        subtitle = "Saves a contact's wallpaper as their photo in Contacts too, so Google Phone " +
+                            "(and your Google account, for synced contacts) show it. Off = KAVÉ only.",
+                        checked = settings.syncWallpaperToContacts,
+                        onCheckedChange = { on ->
+                            app.appScope.launch { app.settingsRepository.update { it.copy(syncWallpaperToContacts = on) } }
+                            if (on) requestSync(entries.map { it.lookupKey })
+                        },
+                    )
+                    if (settings.syncWallpaperToContacts && entries.isNotEmpty()) {
+                        TextButton(onClick = { requestSync(entries.map { it.lookupKey }) }) {
+                            Text("Sync all now", color = McColors.Accent)
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        "Photos you set here are stored only inside KAVÉ Call. Your Contacts and Google Phone " +
-                            "aren't changed.\n\nOn a call the app uses, in order: the photo you set here for that " +
-                            "person → their photo in Contacts → your default wallpaper below.",
+                        "On a call KAVÉ uses: the photo set here for that person → their photo in Contacts → " +
+                            "your default wallpaper. The depth poster effect is KAVÉ-only; Google Phone shows " +
+                            "the plain photo in its own style.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = McColors.TextSecondary,
+                        color = McColors.TextMuted,
                     )
                 }
             }

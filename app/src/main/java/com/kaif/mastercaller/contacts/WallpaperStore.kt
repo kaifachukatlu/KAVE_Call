@@ -42,6 +42,9 @@ class WallpaperStore(context: Context) {
         return fileFor(lookupKey).takeIf { it.exists() }?.let { versioned(Uri.fromFile(it)) }
     }
 
+    /** The saved JPEG for a contact (for copying into Contacts). */
+    fun fileForContact(lookupKey: String): File? = fileFor(lookupKey).takeIf { it.exists() }
+
     fun default(): Uri? = defaultFile().takeIf { it.exists() }?.let { versioned(Uri.fromFile(it)) }
 
     /** Copies and downsizes the picked image into private storage. Call off the main thread. */

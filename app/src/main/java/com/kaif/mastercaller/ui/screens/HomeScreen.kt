@@ -66,30 +66,11 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
     val app = MasterCallerApp.instance
     val settings by app.settingsRepository.settings.collectAsStateWithLifecycle()
     val tts by app.announcer.status.collectAsStateWithLifecycle()
-    val listening by app.speech.listening.collectAsStateWithLifecycle()
-    val level by app.speech.level.collectAsStateWithLifecycle()
 
     var snap by remember { mutableStateOf(SetupStatus.snapshot(context)) }
     LifecycleResumeEffect(Unit) {
         snap = SetupStatus.snapshot(context)
         onPauseOrDispose { app.speech.cancel() }
-    }
-
-    var testResult by remember { mutableStateOf<String?>(null) }
-    var speaking by remember { mutableStateOf(false) }
-    val startVoiceTest = {
-        testResult = null
-        app.speech.listen(settings.languageTag, settings.listenSeconds * 1000L, settings.preferOfflineRecognition) { r ->
-            testResult = when (r.command) {
-                VoiceCommand.ANSWER -> "Heard “${r.heard}” → Pick up ✓"
-                VoiceCommand.REJECT -> "Heard “${r.heard}” → Reject ✓"
-                null -> (r.message ?: "No command") + (r.heard?.let { " (heard “$it”)" } ?: "")
-            }
-        }
-    }
-    val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        snap = SetupStatus.snapshot(context)
-        if (granted) startVoiceTest() else testResult = "Microphone permission denied"
     }
 
     McBackground {
@@ -196,68 +177,6 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 chip = "Change",
                 onClick = onOpenVoices,
             )
-
-            SectionLabel("Try it")
-            McCard {
-                Text(
-                    "“${app.announcer.previewText(settings)}”",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = McColors.TextPrimary,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "This is a preview using a sample name. It is not a real call.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = McColors.TextMuted,
-                )
-                Spacer(Modifier.height(14.dp))
-                PrimaryButton(
-                    text = if (speaking) "Speaking…" else "Test announcement",
-                    icon = Icons.Rounded.PlayArrow,
-                    enabled = !speaking && tts.state == TtsState.READY,
-                    onClick = {
-                        speaking = true
-                        app.announcer.speak(app.announcer.previewSpeech(settings), AnnouncementHelper.Purpose.PREVIEW) {
-                            speaking = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            McCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    ListeningOrb(level = level, active = listening, icon = Icons.Rounded.Mic)
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("Test voice command", style = MaterialTheme.typography.titleSmall, color = McColors.TextPrimary)
-                        Text(
-                            when {
-                                listening -> WordingPresets.forLanguage(settings.languageTag).let {
-                                    "Listening… say “${it.answerHint}” or “${it.rejectHint}”"
-                                }
-                                testResult != null -> testResult!!
-                                else -> "Checks that your phone can hear the commands"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = McColors.TextSecondary,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(14.dp))
-                SecondaryButton(
-                    text = if (listening) "Stop listening" else "Start listening",
-                    icon = Icons.Rounded.Mic,
-                    onClick = {
-                        when {
-                            listening -> app.speech.cancel()
-                            !snap.microphone -> micLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            else -> startVoiceTest()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
 
             SectionLabel("Shortcuts")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

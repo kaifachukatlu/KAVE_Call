@@ -48,6 +48,9 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val LISTEN = intPreferencesKey("listen_seconds")
         val OFFLINE = booleanPreferencesKey("prefer_offline")
         val STYLE_VERSION = intPreferencesKey("style_version")
+        val ANNOUNCE_NUMBER = booleanPreferencesKey("announce_number")
+        val VOICE_PREF = stringPreferencesKey("voice_preference")
+        val SYNC_CONTACT_PHOTO = booleanPreferencesKey("sync_wallpaper_to_contacts")
     }
 
     /** Cold flow straight from disk; first emission is the real stored value. */
@@ -69,6 +72,14 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
                         if ((prefs[Keys.RATE] ?: 1f) == 1f) prefs[Keys.RATE] = AppSettings.SWEET_RATE
                         if ((prefs[Keys.PITCH] ?: 1f) == 1f) prefs[Keys.PITCH] = AppSettings.SWEET_PITCH
                         prefs[Keys.STYLE_VERSION] = 2
+                    }
+                    // v3: built-in "unknown number" wording now includes the caller's number.
+                    if ((prefs[Keys.STYLE_VERSION] ?: 1) < 3) {
+                        when (prefs[Keys.UNKNOWN_TEMPLATE]) {
+                            AppSettings.LEGACY_UNKNOWN_EN -> prefs[Keys.UNKNOWN_TEMPLATE] = AppSettings.DEFAULT_UNKNOWN_TEMPLATE
+                            AppSettings.LEGACY_UNKNOWN_HI -> prefs[Keys.UNKNOWN_TEMPLATE] = WordingPresets.HINDI.unknownTemplate
+                        }
+                        prefs[Keys.STYLE_VERSION] = 3
                     }
                 }
             } catch (e: IOException) {
@@ -105,6 +116,9 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         prefs[Keys.PITCH] = s.pitch
         prefs[Keys.LISTEN] = s.listenSeconds
         prefs[Keys.OFFLINE] = s.preferOfflineRecognition
+        prefs[Keys.ANNOUNCE_NUMBER] = s.announceNumber
+        prefs[Keys.VOICE_PREF] = s.voicePreference.name
+        prefs[Keys.SYNC_CONTACT_PHOTO] = s.syncWallpaperToContacts
     }
 
     private fun Preferences.toSettings(): AppSettings {
@@ -127,6 +141,9 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             listenSeconds = (this[Keys.LISTEN] ?: d.listenSeconds)
                 .coerceIn(AppSettings.MIN_LISTEN_SECONDS, AppSettings.MAX_LISTEN_SECONDS),
             preferOfflineRecognition = this[Keys.OFFLINE] ?: d.preferOfflineRecognition,
+            announceNumber = this[Keys.ANNOUNCE_NUMBER] ?: d.announceNumber,
+            voicePreference = VoicePreference.entries.firstOrNull { it.name == this[Keys.VOICE_PREF] } ?: d.voicePreference,
+            syncWallpaperToContacts = this[Keys.SYNC_CONTACT_PHOTO] ?: d.syncWallpaperToContacts,
         )
     }
 }

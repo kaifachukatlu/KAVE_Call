@@ -51,7 +51,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kaif.mastercaller.MasterCallerApp
 import com.kaif.mastercaller.data.AppSettings
 import com.kaif.mastercaller.data.SUPPORTED_LANGUAGES
+import com.kaif.mastercaller.data.VoicePreference
 import com.kaif.mastercaller.data.WordingPresets
+import com.kaif.mastercaller.data.withVoicePreference
 import com.kaif.mastercaller.data.withDefaultWording
 import com.kaif.mastercaller.data.withLanguage
 import com.kaif.mastercaller.ui.components.McBackground
@@ -123,15 +125,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                 }
                 Spacer(Modifier.height(12.dp))
                 DebouncedTextField(
-                    label = "How the voice says it (optional)",
-                    value = settings.titlePronunciation,
-                    singleLine = true,
-                    allowBlank = true,
-                    supporting = "If a name sounds wrong, spell it the way it sounds. A comma adds a pause, e.g. \"Master, Kayf\". Leave empty for the built-in version.",
-                    onSave = { v -> save { it.copy(titlePronunciation = v.trim()) } },
-                )
-                Spacer(Modifier.height(12.dp))
-                DebouncedTextField(
                     label = "Announcement (saved contacts)",
                     value = settings.announcementTemplate,
                     supporting = "Use {title} and {name}",
@@ -141,46 +134,14 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                 DebouncedTextField(
                     label = "Announcement (unknown numbers)",
                     value = settings.unknownTemplate,
-                    supporting = "Use {title}",
+                    supporting = "Use {title} and {number}",
                     onSave = { v -> save { it.copy(unknownTemplate = v) } },
                 )
-                Spacer(Modifier.height(10.dp))
-                Text("Preview", style = MaterialTheme.typography.labelMedium, color = McColors.Accent)
-                Text(
-                    "“${AnnouncementText.forCaller(settings, "Ayesha")}”",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = McColors.TextPrimary,
-                )
-                Spacer(Modifier.height(10.dp))
-                Row {
-                    TextButton(onClick = {
-                        app.announcer.speak(app.announcer.previewSpeech(settings), AnnouncementHelper.Purpose.PREVIEW) {}
-                    }) {
-                        Icon(Icons.Rounded.PlayArrow, null, tint = McColors.Accent)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Preview voice", color = McColors.Accent)
-                    }
-                    TextButton(onClick = { save { it.withDefaultWording() } }) {
-                        Icon(Icons.Rounded.Replay, null, tint = McColors.TextSecondary)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Reset wording", color = McColors.TextSecondary)
-                    }
+                TextButton(onClick = { save { it.withDefaultWording() } }) {
+                    Icon(Icons.Rounded.Replay, null, tint = McColors.TextSecondary)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Reset wording", color = McColors.TextSecondary)
                 }
-                val hindi = settings.languageTag.startsWith("hi")
-                SecondaryButton(
-                    text = if (hindi) "Switch to English announcement" else "Use Hindi announcement · हिंदी",
-                    onClick = {
-                        val tag = if (hindi) "en-US" else "hi-IN"
-                        val preset = WordingPresets.forLanguage(tag)
-                        save {
-                            it.withLanguage(tag).copy(
-                                announcementTemplate = preset.template,
-                                unknownTemplate = preset.unknownTemplate,
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
                 HorizontalDivider(Modifier.padding(vertical = 8.dp), color = McColors.Outline)
                 SettingSwitchRow(
                     "Caller announcements",
@@ -195,13 +156,47 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                     { v -> save { it.copy(announceUnknownCallers = v) } },
                     enabled = settings.announcementsEnabled,
                 )
+                SettingSwitchRow(
+                    "Say the number",
+                    "For unknown callers, read the number digit by digit, always in English",
+                    settings.announceNumber,
+                    { v -> save { it.copy(announceNumber = v) } },
+                    enabled = settings.announcementsEnabled && settings.announceUnknownCallers,
+                )
             }
 
             // --- Voice ---------------------------------------------------------------------------
             SectionLabel("Voice")
             McCard {
+                Text("Announcer", style = MaterialTheme.typography.titleSmall, color = McColors.TextPrimary)
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, McColors.Outline, RoundedCornerShape(14.dp))
+                        .padding(4.dp),
+                ) {
+                    VoicePreference.entries.forEach { pref ->
+                        val selected = settings.voicePreference == pref
+                        Text(
+                            if (pref == VoicePreference.FEMALE) "Female" else "Male",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (selected) McColors.Ink else McColors.TextSecondary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) McColors.Accent else androidx.compose.ui.graphics.Color.Transparent)
+                                .clickable { save { it.withVoicePreference(pref) } }
+                                .padding(vertical = 10.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                HorizontalDivider(Modifier.padding(vertical = 6.dp), color = McColors.Outline)
                 NavRow(
-                    title = "Female voice",
+                    title = "Choose a specific voice",
                     value = tts.activeVoice?.let { "${it.localeLabel} · ${it.shortName}" + if (settings.voiceName == null) " (auto)" else "" }
                         ?: if (tts.state == TtsState.READY) "Engine default" else "Loading…",
                     onClick = onOpenVoices,
@@ -214,22 +209,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                     onSelect = { pkg -> save { it.copy(enginePackage = pkg, voiceName = null) } },
                 )
                 HorizontalDivider(Modifier.padding(vertical = 6.dp), color = McColors.Outline)
-                val isSweet = settings.speechRate == AppSettings.SWEET_RATE && settings.pitch == AppSettings.SWEET_PITCH
-                SecondaryButton(
-                    text = if (isSweet) "Sweet voice is on ✓" else "Make it a sweet voice",
-                    onClick = {
-                        app.appScope.launch {
-                            app.settingsRepository.update {
-                                it.copy(speechRate = AppSettings.SWEET_RATE, pitch = AppSettings.SWEET_PITCH)
-                            }
-                            delay(150) // let the settings snapshot pick up the new values
-                            val now = app.settingsRepository.settings.value
-                            app.announcer.speak(app.announcer.previewSpeech(now), AnnouncementHelper.Purpose.PREVIEW) {}
-                        }
-                    },
-                    enabled = !isSweet,
-                    modifier = Modifier.fillMaxWidth(),
-                )
                 FloatSlider(
                     label = "Speed",
                     value = settings.speechRate,

@@ -16,6 +16,10 @@ object VoiceCommandParser {
         "haan", "haa", "haan ji", "uthao", "utha lo", "utha do", "uthaun", "uthau",
         "हाँ", "हां", "हा", "हाँ जी", "जी हाँ", "उठाओ", "उठा लो", "उठा दो", "उठाऊँ", "उठाऊं", "उठाइए",
         "पिक अप", "पिकअप", "आंसर", "एक्सेप्ट",
+        // Urdu
+        "ہاں", "ہاں جی", "جی ہاں", "اٹھاؤ", "اٹھا لو", "اٹھا دو", "اٹھاؤں", "پک اپ",
+        // Telugu
+        "ఎత్తు", "ఎత్తండి", "ఎత్తు కాల్", "అవును", "సరే", "లిఫ్ట్", "లిఫ్ట్ చేయి", "పిక్ అప్", "ఆన్సర్", "ettu", "avunu",
     )
 
     val REJECT_PHRASES = listOf(
@@ -24,13 +28,17 @@ object VoiceCommandParser {
         // Hindi / Hinglish
         "nahi", "nahin", "mana", "kaat do", "kato", "rehne do",
         "नहीं", "नही", "मना", "काटो", "काट दो", "रहने दो", "रिजेक्ट", "डिक्लाइन", "कट", "कट करो",
+        // Urdu
+        "نہیں", "کاٹ دو", "کاٹو", "رہنے دو", "منع", "ریجیکٹ",
+        // Telugu
+        "వద్దు", "కట్", "కట్ చేయి", "కట్ చెయ్యి", "రిజెక్ట్", "లేదు", "ఎత్తొద్దు", "ఎత్తకు", "vaddu",
     )
 
     /** Pure negators: "don't pick up" / "mat uthao" -> reject, but "don't reject" stays ambiguous. */
-    private val NEGATIONS = listOf("don't", "dont", "do not", "never", "mat", "मत")
+    private val NEGATIONS = listOf("don't", "dont", "do not", "never", "mat", "मत", "مت")
 
     /** Hindi "no": on its own it rejects, and it also negates an answer word ("नहीं उठाओ"). */
-    private val HINDI_NO = listOf("nahi", "nahin", "नहीं", "नही")
+    private val HINDI_NO = listOf("nahi", "nahin", "नहीं", "नही", "نہیں", "వద్దు", "vaddu", "లేదు")
 
     fun parse(text: String?): VoiceCommand? {
         if (text.isNullOrBlank()) return null
