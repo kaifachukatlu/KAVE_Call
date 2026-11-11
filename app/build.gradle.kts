@@ -15,7 +15,9 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.1.0"
+        // Real phones are ARM; dropping x86 builds of ML Kit's native code keeps the APK much smaller.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     buildTypes {
@@ -62,6 +64,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    // On-device person segmentation for the iPhone-style "depth" call poster (bundled model, works offline, free).
+    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
 
     testImplementation("junit:junit:4.13.2")
 }

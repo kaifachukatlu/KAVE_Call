@@ -23,6 +23,18 @@ During a call, the caller's photo fills the screen. The app picks the first one 
 3. Your **default wallpaper** from *Wallpapers*, used for unknown numbers and contacts without a photo.
 4. The built-in background.
 
+### Contact posters (iPhone-style depth effect)
+
+On the incoming-call screen, a wallpaper becomes a **poster**: the caller's name is drawn in large type, and
+the person in the photo is cut out and layered **in front of** their name, like iOS Contact Posters.
+
+* The person is detected on the device with **ML Kit Selfie Segmentation**: a bundled model that is free
+  and works offline, so no photo leaves the phone.
+* Customize per wallpaper (*Wallpapers → Customize*): **depth effect** on/off, **font** (Modern, Classic,
+  Elegant, Mono) and **name colour**, with a live full-screen preview.
+* Photos without a clear person (landscapes, pets, objects) automatically fall back to the name over
+  the photo. The model works best on photos of one or two people from the waist up.
+
 ### Placing calls
 
 Use the built-in dial pad (*Home → Dialer*) or tap a number in your Contacts app. While Master Caller AI is

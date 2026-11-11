@@ -43,6 +43,7 @@ object CallManager {
         var callback: Call.Callback? = null
         var contact: ContactMatch? = null
         var wallpaper: android.net.Uri? = null
+        var posterStyle = com.kaif.mastercaller.contacts.PosterStyle()
         var resolved = false
         var reportedPhase: CallPhase? = null
         var sawRinging = false
@@ -80,11 +81,10 @@ object CallManager {
         scope.launch {
             val match = withTimeoutOrNull(2_500) { withContext(Dispatchers.IO) { contacts.lookup(number) } }
             // App-only photo for this contact -> contact's own photo -> app default -> built-in background.
-            t.wallpaper = withContext(Dispatchers.IO) {
-                wallpapers.forContact(match?.lookupKey)
-                    ?: match?.fullPhotoUri
-                    ?: match?.photoUri
-                    ?: wallpapers.default()
+            withContext(Dispatchers.IO) {
+                val own = wallpapers.forContact(match?.lookupKey)
+                t.wallpaper = own ?: match?.fullPhotoUri ?: match?.photoUri ?: wallpapers.default()
+                t.posterStyle = wallpapers.styleFor(if (own != null) match?.lookupKey else null)
             }
             t.contact = match
             t.resolved = true
@@ -254,6 +254,7 @@ object CallManager {
             contactName = contact?.name ?: systemName,
             photoUri = contact?.photoUri,
             wallpaperUri = wallpaper,
+            posterStyle = posterStyle,
             ringtoneUri = contact?.ringtoneUri,
             phase = phaseOf(call.stateCompat()),
             isIncoming = isIncoming,

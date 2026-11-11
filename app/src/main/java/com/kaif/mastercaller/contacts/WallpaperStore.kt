@@ -39,10 +39,10 @@ class WallpaperStore(context: Context) {
     /** App-only wallpaper for a contact (by its stable lookup key), if one was set. */
     fun forContact(lookupKey: String?): Uri? {
         if (lookupKey.isNullOrBlank()) return null
-        return fileFor(lookupKey).takeIf { it.exists() }?.let { Uri.fromFile(it) }
+        return fileFor(lookupKey).takeIf { it.exists() }?.let { versioned(Uri.fromFile(it)) }
     }
 
-    fun default(): Uri? = defaultFile().takeIf { it.exists() }?.let { Uri.fromFile(it) }
+    fun default(): Uri? = defaultFile().takeIf { it.exists() }?.let { versioned(Uri.fromFile(it)) }
 
     /** Copies and downsizes the picked image into private storage. Call off the main thread. */
     fun setForContact(lookupKey: String, contactName: String, source: Uri): Boolean {
@@ -56,6 +56,9 @@ class WallpaperStore(context: Context) {
 
     fun removeForContact(lookupKey: String) {
         fileFor(lookupKey).delete()
+        loadStyles().takeIf { it.remove(lookupKey) != null }?.let { s ->
+            stylesFile.outputStream().use { s.store(it, "Master Caller AI poster styles") }
+        }
         val index = loadIndex()
         index.remove(lookupKey)
         saveIndex(index)
@@ -73,14 +76,34 @@ class WallpaperStore(context: Context) {
         refresh()
     }
 
+    // --- poster styles (font / colour / depth) ---------------------------------------------------
+
+    /** Poster style for a contact's app wallpaper, or the shared style ([DEFAULT_STYLE_KEY]) for everything else. */
+    fun styleFor(key: String?): PosterStyle {
+        val styles = loadStyles()
+        return PosterStyle.decode(key?.let { styles.getProperty(it) } ?: styles.getProperty(DEFAULT_STYLE_KEY))
+    }
+
+    fun setStyle(key: String, style: PosterStyle) {
+        val styles = loadStyles()
+        styles.setProperty(key, style.encode())
+        stylesFile.outputStream().use { styles.store(it, "Master Caller AI poster styles") }
+    }
+
+    private val stylesFile = File(dir, "styles.properties")
+
+    private fun loadStyles(): Properties = Properties().apply {
+        if (stylesFile.exists()) stylesFile.inputStream().use { load(it) }
+    }
+
     // --- internals -----------------------------------------------------------------------------
 
     private fun refresh() {
         val index = loadIndex()
         _entries.value = index.stringPropertyNames()
-            .mapNotNull { key -> forContact(key)?.let { AppWallpaper(key, index.getProperty(key), versioned(it)) } }
+            .mapNotNull { key -> forContact(key)?.let { AppWallpaper(key, index.getProperty(key), it) } }
             .sortedBy { it.contactName.lowercase() }
-        _default.value = default()?.let { versioned(it) }
+        _default.value = default()
     }
 
     /** Adds the file's timestamp so image views reload after a photo is replaced. */
@@ -119,8 +142,11 @@ class WallpaperStore(context: Context) {
         indexFile.outputStream().use { index.store(it, "Master Caller AI wallpapers") }
     }
 
-    private companion object {
-        const val TAG = "WallpaperStore"
-        const val MAX_SIDE = 1600
+    companion object {
+        private const val TAG = "WallpaperStore"
+        private const val MAX_SIDE = 1600
+
+        /** Style used for the default wallpaper and contacts' own photos. */
+        const val DEFAULT_STYLE_KEY = "__default__"
     }
 }

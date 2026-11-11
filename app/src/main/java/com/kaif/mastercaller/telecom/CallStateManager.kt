@@ -24,6 +24,8 @@ data class CallInfo(
     val photoUri: Uri?,
     /** Full-size contact photo for the call-screen wallpaper (falls back to the thumbnail). */
     val wallpaperUri: Uri?,
+    /** iPhone-style poster settings (font, colour, depth) for [wallpaperUri]. */
+    val posterStyle: com.kaif.mastercaller.contacts.PosterStyle = com.kaif.mastercaller.contacts.PosterStyle(),
     val ringtoneUri: Uri?,
     val phase: CallPhase,
     val isIncoming: Boolean,

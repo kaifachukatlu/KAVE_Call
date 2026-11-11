@@ -45,6 +45,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kaif.mastercaller.MasterCallerApp
+import com.kaif.mastercaller.contacts.PosterStyle
+import com.kaif.mastercaller.contacts.WallpaperStore
+import com.kaif.mastercaller.ui.poster.PosterEditor
 import com.kaif.mastercaller.ui.components.McBackground
 import com.kaif.mastercaller.ui.components.McCard
 import com.kaif.mastercaller.ui.components.PrimaryButton
@@ -55,6 +58,9 @@ import com.kaif.mastercaller.ui.theme.McColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** A wallpaper open in the poster editor. */
+private data class PosterEdit(val styleKey: String, val name: String, val uri: Uri, val style: PosterStyle)
 
 /** What the photo picker result should be applied to. */
 private sealed interface PhotoTarget {
@@ -71,6 +77,28 @@ fun WallpapersScreen(onBack: () -> Unit) {
     val defaultWallpaper by store.defaultWallpaper.collectAsStateWithLifecycle()
     var target by remember { mutableStateOf<PhotoTarget?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<PosterEdit?>(null) }
+
+    editing?.let { e ->
+        PosterEditor(
+            wallpaper = e.uri,
+            name = e.name,
+            initial = e.style,
+            onSave = { style ->
+                app.appScope.launch(Dispatchers.IO) { store.setStyle(e.styleKey, style) }
+                editing = null
+                Toast.makeText(context, "Poster saved", Toast.LENGTH_SHORT).show()
+            },
+            onClose = { editing = null },
+        )
+        return
+    }
+    val editContact = { key: String, name: String, uri: Uri ->
+        editing = PosterEdit(key, name, uri, store.styleFor(key))
+    }
+    val editDefault = { uri: Uri ->
+        editing = PosterEdit(WallpaperStore.DEFAULT_STYLE_KEY, "Caller Name", uri, store.styleFor(null))
+    }
 
     // Android photo picker: no storage permission needed; the chosen image is copied into private app storage.
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
@@ -86,11 +114,15 @@ fun WallpapersScreen(onBack: () -> Unit) {
                 }
             }
             busy = false
-            Toast.makeText(
-                context,
-                if (ok) "Wallpaper saved" else "Couldn't use that photo, try another",
-                Toast.LENGTH_SHORT,
-            ).show()
+            if (!ok) {
+                Toast.makeText(context, "Couldn't use that photo, try another", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            // Go straight into the poster editor, like iOS.
+            when (t) {
+                PhotoTarget.Default -> store.default()?.let { editDefault(it) }
+                is PhotoTarget.Contact -> store.forContact(t.lookupKey)?.let { editContact(t.lookupKey, t.name, it) }
+            }
         }
     }
     val pickImage = { t: PhotoTarget ->
@@ -155,7 +187,8 @@ fun WallpapersScreen(onBack: () -> Unit) {
                             onClick = { pickImage(PhotoTarget.Default) },
                             enabled = !busy,
                         )
-                        if (defaultWallpaper != null) {
+                        defaultWallpaper?.let { uri ->
+                            TextButton(onClick = { editDefault(uri) }) { Text("Customize", color = McColors.Lavender) }
                             TextButton(onClick = { store.removeDefault() }) { Text("Remove", color = McColors.Reject) }
                         }
                     }
@@ -188,18 +221,20 @@ fun WallpapersScreen(onBack: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Thumb(entry.uri)
                         Spacer(Modifier.width(14.dp))
-                        Text(
-                            entry.contactName,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = McColors.TextPrimary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(
-                            onClick = { pickImage(PhotoTarget.Contact(entry.lookupKey, entry.contactName)) },
-                            enabled = !busy,
-                        ) { Text("Change", color = McColors.Accent) }
-                        TextButton(onClick = { store.removeForContact(entry.lookupKey) }) {
-                            Text("Remove", color = McColors.Reject)
+                        Column(Modifier.weight(1f)) {
+                            Text(entry.contactName, style = MaterialTheme.typography.titleSmall, color = McColors.TextPrimary)
+                            Row {
+                                TextButton(onClick = { editContact(entry.lookupKey, entry.contactName, entry.uri) }) {
+                                    Text("Customize", color = McColors.Lavender)
+                                }
+                                TextButton(
+                                    onClick = { pickImage(PhotoTarget.Contact(entry.lookupKey, entry.contactName)) },
+                                    enabled = !busy,
+                                ) { Text("Photo", color = McColors.Accent) }
+                                TextButton(onClick = { store.removeForContact(entry.lookupKey) }) {
+                                    Text("Remove", color = McColors.Reject)
+                                }
+                            }
                         }
                     }
                 }

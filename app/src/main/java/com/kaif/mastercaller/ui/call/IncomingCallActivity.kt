@@ -63,6 +63,8 @@ import com.kaif.mastercaller.ui.components.CallerAvatar
 import com.kaif.mastercaller.ui.components.CircleActionButton
 import com.kaif.mastercaller.ui.components.ListeningOrb
 import com.kaif.mastercaller.ui.components.McBackground
+import com.kaif.mastercaller.ui.poster.CallPoster
+import androidx.compose.foundation.layout.BoxScope
 import com.kaif.mastercaller.ui.theme.MasterCallerTheme
 import com.kaif.mastercaller.ui.theme.McColors
 import com.kaif.mastercaller.voice.CallUiVisibility
@@ -182,7 +184,9 @@ private fun IncomingCallScreen(
     onRepeat: () -> Unit,
     onListen: () -> Unit,
 ) {
-    McBackground(wallpaper = call.wallpaperUri) {
+    val wallpaper = call.wallpaperUri
+    val posterMode = wallpaper != null
+    val body: @Composable BoxScope.() -> Unit = {
         Column(
             Modifier
                 .fillMaxSize()
@@ -199,17 +203,22 @@ private fun IncomingCallScreen(
                 color = McColors.TextSecondary,
             )
 
-            Spacer(Modifier.weight(0.6f))
-            CallerAvatar(call.displayName, call.photoUri, size = 132.dp, pulsing = call.phase == CallPhase.RINGING)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                call.displayName,
-                style = MaterialTheme.typography.headlineLarge,
-                color = McColors.TextPrimary,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (posterMode) {
+                // The poster already shows the big name and the person; leave the upper area to it.
+                Spacer(Modifier.weight(1.4f))
+            } else {
+                Spacer(Modifier.weight(0.6f))
+                CallerAvatar(call.displayName, call.photoUri, size = 132.dp, pulsing = call.phase == CallPhase.RINGING)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    call.displayName,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = McColors.TextPrimary,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Spacer(Modifier.height(6.dp))
             val sub = when {
                 call.contactName != null -> call.formattedNumber
@@ -246,6 +255,11 @@ private fun IncomingCallScreen(
                 )
             }
         }
+    }
+    if (wallpaper != null) {
+        CallPoster(wallpaper, call.displayName, call.posterStyle, content = body)
+    } else {
+        McBackground(content = body)
     }
 }
 
