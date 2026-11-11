@@ -40,6 +40,9 @@ data class VoiceOption(
 
 data class EngineOption(val packageName: String, val label: String)
 
+/** A language the speech engine supports. */
+data class EngineLanguage(val tag: String, val englishName: String, val nativeName: String, val installed: Boolean)
+
 enum class TtsState { INITIALIZING, READY, FAILED }
 
 data class TtsStatus(
@@ -154,11 +157,57 @@ class AnnouncementHelper(
     fun previewSpeech(settings: AppSettings): String =
         AnnouncementText.forCaller(settings, AnnouncementText.SAMPLE_NAME, spoken = true)
 
+    /** The speech engine's own "install voice data" screen (apps can't download voices themselves). */
     fun installVoiceDataIntent(): Intent =
         Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).apply {
-            enginePackage?.let { setPackage(it) }
+            (enginePackage ?: tts?.defaultEngine)?.let { setPackage(it) }
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+
+    /** Android's text-to-speech settings, where downloaded voices can be managed / removed. */
+    fun manageVoicesIntent(): Intent =
+        Intent("com.android.settings.TTS_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /** Re-reads voices and languages (e.g. after the user downloads or removes voice data). */
+    fun refresh() {
+        refreshVoices()
+        refreshLanguages()
+    }
+
+    private val _languages = MutableStateFlow<List<EngineLanguage>>(emptyList())
+
+    /** Every language the current engine can speak, with download status. */
+    val languages: StateFlow<List<EngineLanguage>> = _languages.asStateFlow()
+
+    private fun refreshLanguages() {
+        val engine = tts ?: return
+        if (ttsState != TtsState.READY) return
+        scope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            val list = try {
+                engine.availableLanguages.orEmpty()
+                    .filter { it.language.isNotEmpty() }
+                    .distinctBy { it.toLanguageTag() }
+                    .map { loc ->
+                        val status = try {
+                            engine.isLanguageAvailable(loc)
+                        } catch (e: Exception) {
+                            TextToSpeech.LANG_NOT_SUPPORTED
+                        }
+                        EngineLanguage(
+                            tag = loc.toLanguageTag(),
+                            englishName = loc.getDisplayName(Locale.ENGLISH),
+                            nativeName = loc.getDisplayName(loc).replaceFirstChar { it.titlecase(loc) },
+                            installed = status != TextToSpeech.LANG_MISSING_DATA && status >= TextToSpeech.LANG_AVAILABLE,
+                        )
+                    }
+                    .sortedBy { it.englishName }
+            } catch (e: Exception) {
+                Log.w(TAG, "availableLanguages failed", e)
+                emptyList()
+            }
+            _languages.value = list
+        }
+    }
 
     // --- engine lifecycle ----------------------------------------------------------------------
 
@@ -210,6 +259,7 @@ class AnnouncementHelper(
             emptyList()
         }
         refreshVoices()
+        refreshLanguages()
         flushWaiting(true)
     }
 

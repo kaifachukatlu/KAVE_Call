@@ -242,8 +242,29 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
 
             // --- Language ------------------------------------------------------------------------
             SectionLabel("Language")
+            var showMoreLanguages by remember { mutableStateOf(false) }
+            if (showMoreLanguages) {
+                LanguagePickerDialog(
+                    current = settings.languageTag,
+                    onPick = { tag ->
+                        save { it.withLanguage(tag) }
+                        showMoreLanguages = false
+                    },
+                    onDismiss = { showMoreLanguages = false },
+                )
+            }
             McCard {
-                SUPPORTED_LANGUAGES.forEach { lang ->
+                // A language picked from "More languages" shows here as the selected one.
+                val extra = settings.languageTag.takeIf { tag -> SUPPORTED_LANGUAGES.none { it.tag == tag } }
+                val rows = SUPPORTED_LANGUAGES + listOfNotNull(
+                    extra?.let {
+                        com.kaif.mastercaller.data.LanguageOption(
+                            it,
+                            java.util.Locale.forLanguageTag(it).let { l -> "${l.getDisplayName(java.util.Locale.ENGLISH)} · ${l.getDisplayName(l)}" },
+                        )
+                    },
+                )
+                rows.forEach { lang ->
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -260,8 +281,14 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                         Text(lang.label, color = McColors.TextPrimary, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
+                TextButton(onClick = { showMoreLanguages = true }) {
+                    Icon(Icons.Rounded.KeyboardArrowDown, null, tint = McColors.Accent)
+                    Spacer(Modifier.width(4.dp))
+                    Text("More languages", color = McColors.Accent)
+                }
                 Text(
-                    "Used for the spoken voice and for voice commands. Unless you've customised the wording, it switches to match (Hindi: \"…कॉल कर रहे हैं। उठाऊँ या नहीं?\").",
+                    "English, Hindi, Urdu and Telugu come with ready-made wording and voice commands. " +
+                        "For other languages, edit the wording above in that language; answer by tapping the buttons.",
                     style = MaterialTheme.typography.bodySmall,
                     color = McColors.TextMuted,
                 )
