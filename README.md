@@ -5,7 +5,7 @@
 A native Android (Kotlin + Jetpack Compose) phone app that announces incoming callers with a female
 text-to-speech voice:
 
-> "Master Kaif, *Ayesha* is calling. Would you like to pick up or not?"
+> "Boss, *[caller's name]* is calling. Would you like to pick up or not?"
 
 You can then say **"Pick up"** / **"Reject"**, or tap the green / red button. After answering, the app
 requests speakerphone, and you can switch back to the earpiece at any time.
@@ -84,6 +84,11 @@ the default phone app, every call (incoming and outgoing) uses its call screen.
 | `ui/dialer/DialerActivity.kt` | Dial pad (Android requires one before it will offer the default phone app role) |
 
 ---
+
+## Download
+
+Get the latest APK from **[Releases](https://github.com/kaifachukatlu/KAVE_Call/releases/latest)**
+(open the link on the phone, tap `KAVE-Call.apk`, install).
 
 ## 1. Open the project
 

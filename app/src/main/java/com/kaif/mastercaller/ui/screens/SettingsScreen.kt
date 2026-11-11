@@ -130,7 +130,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                 WordingEditor(
                     label = "When a saved contact calls",
                     template = settings.announcementTemplate,
-                    tokens = listOf(you, WordingToken("name", "Caller's name", "Rahul")),
+                    tokens = listOf(you, WordingToken("name", "Caller's name", "Caller Name")),
                     onSave = { v -> save { it.copy(announcementTemplate = v) } },
                 )
                 Spacer(Modifier.height(12.dp))

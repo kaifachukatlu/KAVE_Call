@@ -23,8 +23,8 @@ class AnnouncementTextTest {
     @Test
     fun knownContactUsesDefaultWording() {
         assertEquals(
-            "Master Kaif, Ayesha Khan is calling. Would you like to pick up or not?",
-            AnnouncementText.forCaller(defaults, "Ayesha Khan"),
+            "Master Kaif, Rahul Sharma is calling. Would you like to pick up or not?",
+            AnnouncementText.forCaller(defaults, "Rahul Sharma"),
         )
     }
 

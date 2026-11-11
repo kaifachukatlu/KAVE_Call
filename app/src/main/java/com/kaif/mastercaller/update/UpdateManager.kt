@@ -210,7 +210,7 @@ class UpdateManager(context: Context, private val scope: CoroutineScope) {
 
         /** "Nothing newer": no release yet, or the latest release has no APK attached. */
         private val NO_RELEASE = AvailableUpdate("0", "", "", 0)
-        private const val LATEST_RELEASE_API = "https://api.github.com/repos/kaifachukatlu/MasterCallerAI/releases/latest"
+        private const val LATEST_RELEASE_API = "https://api.github.com/repos/kaifachukatlu/KAVE_Call/releases/latest"
         private const val KEY_LAST_CHECK = "last_check"
         private const val CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
         private const val APK_NAME = "kave-call-update.apk"
