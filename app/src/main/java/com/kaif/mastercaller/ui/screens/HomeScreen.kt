@@ -19,6 +19,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Dialpad
+import com.kaif.mastercaller.ui.components.ControlTile
+import androidx.compose.material.icons.rounded.Contacts
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -116,6 +119,43 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 color = McColors.TextMuted,
             )
 
+            // Quick access, like a phone app's tabs.
+            Spacer(Modifier.height(28.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ControlTile(
+                    icon = Icons.Rounded.History,
+                    label = "Recents",
+                    active = false,
+                    square = false,
+                    onClick = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_RECENTS)) },
+                    modifier = Modifier.weight(1f),
+                )
+                ControlTile(
+                    icon = Icons.Rounded.Contacts,
+                    label = "Contacts",
+                    active = false,
+                    square = false,
+                    onClick = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_CONTACTS)) },
+                    modifier = Modifier.weight(1f),
+                )
+                ControlTile(
+                    icon = Icons.Rounded.Dialpad,
+                    label = "Keypad",
+                    active = false,
+                    square = false,
+                    onClick = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_KEYPAD)) },
+                    modifier = Modifier.weight(1f),
+                )
+                ControlTile(
+                    icon = Icons.Rounded.Wallpaper,
+                    label = "Wallpapers",
+                    active = false,
+                    square = false,
+                    onClick = onOpenWallpapers,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
             SectionLabel("Status")
             StatusCard(
                 icon = Icons.Rounded.Call,
@@ -170,6 +210,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                         append(if (settings.voiceName == null) "Auto · " else "")
                         append("${voice.localeLabel} · ${voice.shortName}")
                         if (voice.gender == VoiceGender.FEMALE) append(" · likely female")
+                        if (voice.gender == VoiceGender.MALE) append(" · likely male")
                         tts.engineLabel?.let { append("\n$it") }
                     }
                 } + if (tts.missingData) "\nVoice data missing, tap to fix in Settings" else "",
@@ -178,16 +219,6 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 onClick = onOpenVoices,
             )
 
-            SectionLabel("Shortcuts")
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(
-                    "Phone",
-                    onClick = { context.startActivity(Intent(context, DialerActivity::class.java)) },
-                    icon = Icons.Rounded.Dialpad,
-                    modifier = Modifier.weight(1f),
-                )
-                SecondaryButton("Wallpapers", onClick = onOpenWallpapers, icon = Icons.Rounded.Wallpaper, modifier = Modifier.weight(1f))
-            }
             Spacer(Modifier.height(24.dp))
         }
     }

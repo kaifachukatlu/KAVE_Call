@@ -468,16 +468,18 @@ fun ControlTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    /** false = height follows the content (for narrow 4-across rows, so labels never clip). */
+    square: Boolean = true,
 ) {
     val shape = RoundedCornerShape(26.dp)
     Column(
         modifier
-            .aspectRatio(1f)
+            .then(if (square) Modifier.aspectRatio(1f) else Modifier.padding(vertical = 0.dp))
             .clip(shape)
             .background(if (active) McColors.Accent.copy(alpha = 0.14f) else McColors.Surface2.copy(alpha = 0.9f))
             .border(1.dp, if (active) McColors.Accent.copy(alpha = 0.45f) else McColors.Outline.copy(alpha = 0.5f), shape)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(8.dp),
+            .padding(horizontal = 4.dp, vertical = if (square) 8.dp else 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

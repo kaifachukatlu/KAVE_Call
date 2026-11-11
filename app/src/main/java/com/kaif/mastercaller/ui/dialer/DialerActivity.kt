@@ -100,7 +100,18 @@ class DialerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val initial = intent?.data?.takeIf { it.scheme == "tel" }?.schemeSpecificPart.orEmpty()
-        setContent { MasterCallerTheme { PhoneScreen(initial, onBack = { finish() }) } }
+        val startTab = intent?.getStringExtra(EXTRA_TAB)
+        setContent { MasterCallerTheme { PhoneScreen(initial, startTab, onBack = { finish() }) } }
+    }
+
+    companion object {
+        private const val EXTRA_TAB = "start_tab"
+        const val TAB_RECENTS = "RECENTS"
+        const val TAB_CONTACTS = "CONTACTS"
+        const val TAB_KEYPAD = "KEYPAD"
+
+        fun intent(context: Context, tab: String): android.content.Intent =
+            android.content.Intent(context, DialerActivity::class.java).putExtra(EXTRA_TAB, tab)
     }
 }
 
@@ -111,10 +122,17 @@ private enum class PhoneTab(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-private fun PhoneScreen(initialNumber: String, onBack: () -> Unit) {
+private fun PhoneScreen(initialNumber: String, startTab: String?, onBack: () -> Unit) {
     val context = LocalContext.current
     val directory = remember { PhoneDirectory(context) }
-    var tab by rememberSaveable { mutableStateOf(if (initialNumber.isNotEmpty()) PhoneTab.KEYPAD else PhoneTab.RECENTS) }
+    var tab by rememberSaveable {
+        mutableStateOf(
+            when {
+                initialNumber.isNotEmpty() -> PhoneTab.KEYPAD
+                else -> PhoneTab.entries.firstOrNull { it.name == startTab } ?: PhoneTab.RECENTS
+            },
+        )
+    }
 
     // One place to start calls (asks for the Phone permission the first time).
     var pendingNumber by remember { mutableStateOf<String?>(null) }
