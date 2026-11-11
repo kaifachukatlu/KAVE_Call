@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kaif.mastercaller.MasterCallerApp
@@ -100,20 +101,39 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                AppLogo(56.dp)
+                AppLogo(44.dp)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Master Caller AI", style = MaterialTheme.typography.headlineSmall, color = McColors.TextPrimary)
-                    Text(
-                        "At your service, ${settings.personalTitle.ifBlank { "Master" }}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = McColors.TextSecondary,
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(com.kaif.mastercaller.R.drawable.kave_wordmark),
+                        contentDescription = "KAVÉ",
+                        modifier = Modifier.width(92.dp),
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Text("CALL", style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 5.sp), color = McColors.AccentSoft)
                 }
                 IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = McColors.TextPrimary)
+                    Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = McColors.TextSecondary)
                 }
             }
+            Spacer(Modifier.height(36.dp))
+            val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+            val greeting = when (hour) {
+                in 5..11 -> "Good morning"
+                in 12..16 -> "Good afternoon"
+                else -> "Good evening"
+            }
+            Text(
+                "$greeting,\n${settings.personalTitle.ifBlank { "there" }}",
+                style = MaterialTheme.typography.displaySmall,
+                color = McColors.TextPrimary,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "BEYOND THE ORDINARY",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 3.sp),
+                color = McColors.TextMuted,
+            )
 
             SectionLabel("Status")
             StatusCard(
@@ -121,7 +141,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 hue = McColors.Accent,
                 title = "Default phone app",
                 detail = if (snap.isDefaultDialer) {
-                    "Master Caller AI handles your incoming calls"
+                    "KAVÉ Call handles your incoming calls"
                 } else {
                     "Not set. Calls still use your old phone app"
                 },
@@ -133,7 +153,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
             val assistantOk = settings.announcementsEnabled && tts.state == TtsState.READY
             StatusCard(
                 icon = Icons.Rounded.RecordVoiceOver,
-                hue = McColors.Lavender,
+                hue = McColors.Accent,
                 title = "Voice assistant",
                 detail = buildString {
                     append(if (settings.announcementsEnabled) "Announcements on" else "Announcements off")
@@ -160,7 +180,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
             val voice = tts.activeVoice
             StatusCard(
                 icon = Icons.Rounded.GraphicEq,
-                hue = McColors.Mint,
+                hue = McColors.Accent,
                 title = "Announcement voice",
                 detail = when {
                     voice == null && tts.state == TtsState.READY -> "Engine default voice${tts.engineLabel?.let { " · $it" } ?: ""}"

@@ -195,7 +195,7 @@ private fun IncomingCallScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(12.dp))
-            Text("MASTER CALLER AI", style = MaterialTheme.typography.labelSmall, color = McColors.Accent)
+            Text("KAVÉ CALL", style = MaterialTheme.typography.labelSmall, color = McColors.Accent)
             Spacer(Modifier.height(4.dp))
             Text(
                 if (call.phase == CallPhase.RINGING) "Incoming call" else "Call ended",
@@ -241,15 +241,16 @@ private fun IncomingCallScreen(
             ) {
                 CircleActionButton(
                     icon = Icons.Rounded.CallEnd,
-                    label = "Reject",
+                    label = "Decline",
                     container = McColors.Reject,
                     onClick = onReject,
                     enabled = controlsEnabled,
                 )
                 CircleActionButton(
                     icon = Icons.Rounded.Call,
-                    label = "Pick Up",
+                    label = "Accept",
                     container = McColors.Answer,
+                    content = McColors.Ink,
                     onClick = onAnswer,
                     enabled = controlsEnabled,
                 )

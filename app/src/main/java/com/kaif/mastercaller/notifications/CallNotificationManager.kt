@@ -64,7 +64,7 @@ class CallNotificationManager(context: Context) {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setColor(0xFFFF8F70.toInt())
+            .setColor(0xFFB9A27B.toInt())
             .setContentIntent(fullScreen)
             .setFullScreenIntent(fullScreen, true)
             .setStyle(NotificationCompat.CallStyle.forIncomingCall(person, decline, answer))
@@ -100,7 +100,7 @@ class CallNotificationManager(context: Context) {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
-            .setColor(0xFFFF8F70.toInt())
+            .setColor(0xFFB9A27B.toInt())
             .setContentIntent(open)
             .addAction(NotificationCompat.Action.Builder(null, "Hang up", hangup).build())
         if (call.phase == CallPhase.ACTIVE && call.connectTimeMillis > 0) {

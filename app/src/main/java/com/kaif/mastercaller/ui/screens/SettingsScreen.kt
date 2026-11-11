@@ -1,6 +1,9 @@
 package com.kaif.mastercaller.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -92,11 +95,32 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
             SectionLabel("Announcement")
             McCard {
                 DebouncedTextField(
-                    label = "Your title",
+                    label = "What should she call you?",
                     value = settings.personalTitle,
                     singleLine = true,
+                    supporting = "Anything you like. Or tap a quick choice below.",
                     onSave = { v -> save { it.copy(personalTitle = v) } },
                 )
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf("Kaif", "Master Kaif", "Hero", "Boss", "Sir", "Captain", "Legend").forEach { choice ->
+                        val selected = settings.personalTitle == choice
+                        Text(
+                            choice,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (selected) McColors.Ink else McColors.TextPrimary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(if (selected) McColors.Accent else McColors.Surface2)
+                                .border(1.dp, if (selected) McColors.Accent else McColors.Outline, RoundedCornerShape(50))
+                                .clickable { save { it.copy(personalTitle = choice, titlePronunciation = "") } }
+                                .padding(horizontal = 16.dp, vertical = 9.dp),
+                        )
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
                 DebouncedTextField(
                     label = "How the voice says it (optional)",

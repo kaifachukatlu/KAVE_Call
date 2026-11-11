@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.util.Properties
 
-/** A call wallpaper chosen inside Master Caller AI for one contact. */
+/** A call wallpaper chosen inside KAVÉ Call for one contact. */
 data class AppWallpaper(val lookupKey: String, val contactName: String, val uri: Uri)
 
 /**
@@ -57,7 +57,7 @@ class WallpaperStore(context: Context) {
     fun removeForContact(lookupKey: String) {
         fileFor(lookupKey).delete()
         loadStyles().takeIf { it.remove(lookupKey) != null }?.let { s ->
-            stylesFile.outputStream().use { s.store(it, "Master Caller AI poster styles") }
+            stylesFile.outputStream().use { s.store(it, "KAVÉ Call poster styles") }
         }
         val index = loadIndex()
         index.remove(lookupKey)
@@ -87,7 +87,7 @@ class WallpaperStore(context: Context) {
     fun setStyle(key: String, style: PosterStyle) {
         val styles = loadStyles()
         styles.setProperty(key, style.encode())
-        stylesFile.outputStream().use { styles.store(it, "Master Caller AI poster styles") }
+        stylesFile.outputStream().use { styles.store(it, "KAVÉ Call poster styles") }
     }
 
     private val stylesFile = File(dir, "styles.properties")
@@ -139,7 +139,7 @@ class WallpaperStore(context: Context) {
     }
 
     private fun saveIndex(index: Properties) {
-        indexFile.outputStream().use { index.store(it, "Master Caller AI wallpapers") }
+        indexFile.outputStream().use { index.store(it, "KAVÉ Call wallpapers") }
     }
 
     companion object {

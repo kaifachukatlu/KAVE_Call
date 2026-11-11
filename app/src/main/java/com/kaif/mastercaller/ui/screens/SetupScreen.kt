@@ -78,14 +78,14 @@ fun SetupScreen(onBack: (() -> Unit)?, onDone: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
-            ScreenHeader("Setup", "Permissions Master Caller AI needs, and why", onBack)
+            ScreenHeader("Setup", "Permissions KAVÉ Call needs, and why", onBack)
 
             SectionLabel("Step 1: Default phone app")
             PermissionCard(
                 icon = Icons.Rounded.Call,
                 title = "Default phone app",
                 why = "Android only lets the default phone app show its own incoming-call screen, answer, " +
-                    "reject and route call audio. Master Caller AI will then handle all calls. You can switch back any time.",
+                    "reject and route call audio. KAVÉ Call will then handle all calls. You can switch back any time.",
                 granted = snap.isDefaultDialer,
                 actionLabel = "Set as default",
                 onAction = {
@@ -205,7 +205,7 @@ private fun PermissionCard(
 ) {
     McCard(highlight = !granted) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(icon, tint = if (granted) McColors.Mint else McColors.Warning)
+            IconBadge(icon, tint = if (granted) McColors.Success else McColors.Warning)
             Spacer(Modifier.width(12.dp))
             Text(title, style = MaterialTheme.typography.titleMedium, color = McColors.TextPrimary, modifier = Modifier.weight(1f))
             StatusChip(if (granted) "Granted" else "Needed", ok = granted)

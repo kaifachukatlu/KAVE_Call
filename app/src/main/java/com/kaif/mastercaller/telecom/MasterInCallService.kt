@@ -15,7 +15,7 @@ import com.kaif.mastercaller.ui.call.OngoingCallActivity
 import com.kaif.mastercaller.voice.IncomingCallAssistant
 
 /**
- * Bound by Android Telecom for every call once Master Caller AI is the default phone app.
+ * Bound by Android Telecom for every call once KAVÉ Call is the default phone app.
  * Bridges Telecom callbacks into CallManager / AudioRouteManager and drives the UI + assistant.
  */
 class MasterInCallService : InCallService(), CallManager.Listener {

@@ -54,6 +54,17 @@ private fun AppRoot() {
     }
     BackHandler(enabled = screen != Screen.HOME, onBack = back)
 
+    // Brand splash once per launch (not on rotation / process restore).
+    var showSplash by rememberSaveable { mutableStateOf(true) }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = showSplash,
+        enter = fadeIn(tween(0)),
+        exit = fadeOut(tween(450)),
+    ) {
+        com.kaif.mastercaller.ui.components.KaveSplash(onFinished = { showSplash = false })
+    }
+    if (showSplash) return
+
     AnimatedContent(
         targetState = screen,
         transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },

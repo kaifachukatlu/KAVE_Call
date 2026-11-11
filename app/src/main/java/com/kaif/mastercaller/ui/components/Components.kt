@@ -104,19 +104,13 @@ fun McBackground(
             .fillMaxSize()
             .background(McColors.Ink)
             .drawBehind {
-                // Two soft, low-alpha glows (warm coral + cool lavender) give depth without a neon look.
-                val r = size.maxDimension * 0.6f
-                val coral = androidx.compose.ui.geometry.Offset(size.width * 0.1f, 0f)
-                val lavender = androidx.compose.ui.geometry.Offset(size.width * 0.95f, size.height * 0.12f)
+                // A single, very faint champagne sheen from the top corner: depth without decoration.
+                val r = size.maxDimension * 0.75f
+                val origin = androidx.compose.ui.geometry.Offset(size.width * 0.85f, -size.height * 0.05f)
                 drawCircle(
-                    brush = Brush.radialGradient(listOf(McColors.Accent.copy(alpha = 0.16f), Color.Transparent), coral, r),
+                    brush = Brush.radialGradient(listOf(McColors.Accent.copy(alpha = 0.07f), Color.Transparent), origin, r),
                     radius = r,
-                    center = coral,
-                )
-                drawCircle(
-                    brush = Brush.radialGradient(listOf(McColors.Lavender.copy(alpha = 0.12f), Color.Transparent), lavender, r),
-                    radius = r,
-                    center = lavender,
+                    center = origin,
                 )
             },
         content = content,
@@ -130,13 +124,13 @@ fun McCard(
     highlight: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(24.dp)
-    val border = if (highlight) McColors.Accent.copy(alpha = 0.30f) else McColors.Outline.copy(alpha = 0.6f)
+    val shape = RoundedCornerShape(20.dp)
+    val border = if (highlight) McColors.Accent.copy(alpha = 0.35f) else McColors.Outline
     Column(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(McColors.Surface2.copy(alpha = 0.92f))
+            .background(McColors.Surface)
             .border(1.dp, border, shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(18.dp),
@@ -144,21 +138,49 @@ fun McCard(
     )
 }
 
+/** KAVÉ app-icon tile: the original champagne monogram on obsidian, with a hairline champagne edge. */
 @Composable
 fun AppLogo(size: Dp = 56.dp) {
+    val shape = RoundedCornerShape(size * 0.28f)
     Box(
         Modifier
             .size(size)
-            .clip(RoundedCornerShape(size * 0.3f))
-            .background(Brush.linearGradient(listOf(McColors.Accent, McColors.Lavender))),
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(McColors.Surface2, McColors.Ink)))
+            .border(1.dp, McColors.Accent.copy(alpha = 0.45f), shape),
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = null,
-            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(McColors.Ink),
-            modifier = Modifier.size(size * 1.35f),
+            painter = painterResource(R.drawable.kave_monogram),
+            contentDescription = "KAVÉ",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(size * 0.62f),
         )
+    }
+}
+
+/** The KAVÉ wordmark from the brand artwork, optionally with the product line underneath. */
+@Composable
+fun KaveWordmark(
+    width: Dp,
+    modifier: Modifier = Modifier,
+    product: String? = "CALL",
+) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(
+            painter = painterResource(R.drawable.kave_wordmark),
+            contentDescription = "KAVÉ",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.width(width),
+        )
+        if (product != null) {
+            Spacer(Modifier.height(width * 0.06f))
+            Text(
+                product,
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = (width.value / 26f).sp),
+                color = McColors.AccentSoft,
+            )
+        }
     }
 }
 
@@ -190,22 +212,22 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text.uppercase(),
         style = MaterialTheme.typography.labelSmall,
-        color = McColors.Accent,
-        modifier = modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp),
+        color = McColors.TextMuted,
+        modifier = modifier.padding(start = 4.dp, top = 28.dp, bottom = 12.dp),
     )
 }
 
 @Composable
 fun StatusChip(text: String, ok: Boolean?, modifier: Modifier = Modifier) {
     val color = when (ok) {
-        true -> McColors.Mint
+        true -> McColors.Success
         false -> McColors.Warning
-        null -> McColors.TextSecondary
+        null -> McColors.TextMuted
     }
     Row(
         modifier
             .clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.12f))
+            .border(1.dp, color.copy(alpha = 0.35f), RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -343,7 +365,7 @@ fun CallerAvatar(name: String, photoUri: Uri?, size: Dp, pulsing: Boolean = fals
                         for (i in 0 until 3) {
                             val p = (progress + i / 3f) % 1f
                             drawCircle(
-                                color = (if (i % 2 == 0) McColors.Accent else McColors.Lavender)
+                                color = (if (i % 2 == 0) McColors.Accent else McColors.AccentSoft)
                                     .copy(alpha = (1f - p) * 0.35f),
                                 radius = base + p * (this.size.minDimension / 2f - base),
                                 style = Stroke(width = 2.dp.toPx()),
@@ -366,7 +388,7 @@ fun CallerAvatar(name: String, photoUri: Uri?, size: Dp, pulsing: Boolean = fals
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .background(Brush.linearGradient(listOf(McColors.AccentDeep, McColors.Lavender.copy(alpha = 0.7f)))),
+                        .background(Brush.linearGradient(listOf(McColors.AccentDeep, McColors.AccentSoft.copy(alpha = 0.7f)))),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (initials.isNotEmpty()) {

@@ -152,7 +152,7 @@ fun WallpapersScreen(onBack: () -> Unit) {
                 ScreenHeader("Call wallpapers", "Photos shown full-screen when someone calls", onBack)
                 McCard {
                     Text(
-                        "Photos you set here are stored only inside Master Caller AI. Your Contacts and Google Phone " +
+                        "Photos you set here are stored only inside KAVÉ Call. Your Contacts and Google Phone " +
                             "aren't changed.\n\nOn a call the app uses, in order: the photo you set here for that " +
                             "person → their photo in Contacts → your default wallpaper below.",
                         style = MaterialTheme.typography.bodySmall,
@@ -188,7 +188,7 @@ fun WallpapersScreen(onBack: () -> Unit) {
                             enabled = !busy,
                         )
                         defaultWallpaper?.let { uri ->
-                            TextButton(onClick = { editDefault(uri) }) { Text("Customize", color = McColors.Lavender) }
+                            TextButton(onClick = { editDefault(uri) }) { Text("Customize", color = McColors.AccentSoft) }
                             TextButton(onClick = { store.removeDefault() }) { Text("Remove", color = McColors.Reject) }
                         }
                     }
@@ -225,7 +225,7 @@ fun WallpapersScreen(onBack: () -> Unit) {
                             Text(entry.contactName, style = MaterialTheme.typography.titleSmall, color = McColors.TextPrimary)
                             Row {
                                 TextButton(onClick = { editContact(entry.lookupKey, entry.contactName, entry.uri) }) {
-                                    Text("Customize", color = McColors.Lavender)
+                                    Text("Customize", color = McColors.AccentSoft)
                                 }
                                 TextButton(
                                     onClick = { pickImage(PhotoTarget.Contact(entry.lookupKey, entry.contactName)) },

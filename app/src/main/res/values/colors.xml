@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="mc_black">#FF0F1016</color>
-    <color name="mc_accent">#FFFF8F70</color>
-    <color name="launcher_bg">#FF17181F</color>
+    <color name="mc_black">#FF090A0B</color>
+    <color name="mc_accent">#FFB9A27B</color>
+    <color name="launcher_bg">#FF090A0B</color>
 </resources>

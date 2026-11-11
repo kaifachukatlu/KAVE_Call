@@ -7,58 +7,72 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kaif.mastercaller.R
 
 /**
- * "Warm Night" palette.
- * - Neutrals are slightly warm (a hint of red/blue) instead of pure grey, so the dark UI feels soft, not "terminal".
- * - One warm primary (coral) for actions, plus three supporting hues used sparingly for meaning
- *   (lavender = voice, mint = success/ready, honey = attention). Saturation is kept moderate (no neon).
- * - Text is warm off-white with clearly separated secondary/muted steps.
+ * KAVÉ design system. "Beyond the ordinary."
+ * Black and graphite dominate; champagne is reserved for selected states, key icons and primary actions;
+ * warm ivory carries text. No neon, no purple/blue gradients.
  */
 object McColors {
-    // Neutrals (warm ink)
-    val Ink = Color(0xFF0F1016)
-    val Surface = Color(0xFF17181F)
-    val Surface2 = Color(0xFF1F2029)
-    val Surface3 = Color(0xFF292A35)
-    val Outline = Color(0xFF33343F)
+    // Foundation
+    val Ink = Color(0xFF090A0B) // Obsidian Black
+    val Surface = Color(0xFF151718) // Deep Graphite
+    val Surface2 = Color(0xFF1D2020) // Elevated Surface
+    val Surface3 = Color(0xFF262928) // Pressed / control wells
+    val Outline = Color(0xFF343330) // Subtle Border
 
-    // Primary: coral
-    val Accent = Color(0xFFFF8F70)
-    val AccentSoft = Color(0xFFFFC2B0)
-    val AccentDeep = Color(0xFFC85E48)
-    val AccentDark = Color(0xFF3A1F1A)
-
-    // Supporting hues
-    val Lavender = Color(0xFFB4A7FF)
-    val Mint = Color(0xFF7FDCC0)
-    val Honey = Color(0xFFF6C772)
-    val Sky = Color(0xFF8CC8FF)
+    // Champagne
+    val Accent = Color(0xFFB9A27B) // Champagne Gold
+    val AccentSoft = Color(0xFFD3C2A2) // Soft Champagne
+    val AccentDeep = Color(0xFF8C7856)
+    val AccentDark = Color(0xFF2A251D)
 
     // Text
-    val TextPrimary = Color(0xFFF5F1EC)
-    val TextSecondary = Color(0xFFADA9B4)
-    val TextMuted = Color(0xFF75727F)
+    val TextPrimary = Color(0xFFF1EDE3) // Warm Ivory
+    val TextSecondary = Color(0xFFB9B6AD)
+    val TextMuted = Color(0xFF96958E) // Muted Text
 
     // Semantics
-    val Answer = Color(0xFF3CCB7F)
-    val Reject = Color(0xFFF2545B)
-    val Warning = Honey
+    val Success = Color(0xFF9EBE9C)
+    val Warning = Color(0xFFD3C2A2)
+    val Reject = Color(0xFFC77B73) // Danger Red
+    val Answer = Accent // Accept is champagne
 }
+
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+/** Manrope (variable): clean, modern interface text. Bundled, works offline. */
+val Manrope = FontFamily(
+    listOf(300, 400, 500, 600, 700, 800).map { w ->
+        Font(R.font.manrope, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
+    },
+)
+
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+/** Cormorant Garamond (variable): refined display serif for brand moments and large names only. */
+val Cormorant = FontFamily(
+    listOf(300, 400, 500, 600, 700).map { w ->
+        Font(R.font.cormorant_garamond, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
+    },
+)
 
 private val scheme = darkColorScheme(
     primary = McColors.Accent,
     onPrimary = McColors.Ink,
     primaryContainer = McColors.AccentDark,
     onPrimaryContainer = McColors.AccentSoft,
-    secondary = McColors.Lavender,
+    secondary = McColors.AccentSoft,
     onSecondary = McColors.Ink,
     secondaryContainer = McColors.Surface3,
     onSecondaryContainer = McColors.TextPrimary,
-    tertiary = McColors.Mint,
+    tertiary = McColors.Success,
     onTertiary = McColors.Ink,
     background = McColors.Ink,
     onBackground = McColors.TextPrimary,
@@ -74,33 +88,52 @@ private val scheme = darkColorScheme(
     outline = McColors.Outline,
     outlineVariant = McColors.Outline,
     error = McColors.Reject,
-    onError = Color.White,
+    onError = McColors.Ink,
 )
 
-private val base = Typography()
+private fun ui(size: Int, weight: Int, line: Int, spacing: Float = 0f) = TextStyle(
+    fontFamily = Manrope,
+    fontWeight = FontWeight(weight),
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = spacing.sp,
+)
+
+private fun display(size: Int, weight: Int, line: Int, spacing: Float = 0f) = TextStyle(
+    fontFamily = Cormorant,
+    fontWeight = FontWeight(weight),
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = spacing.sp,
+)
 
 private val typography = Typography(
-    displaySmall = base.displaySmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = (-0.5).sp),
-    headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.SemiBold, letterSpacing = (-0.4).sp),
-    headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = (-0.3).sp),
-    headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-    titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-    titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-    titleSmall = base.titleSmall.copy(fontWeight = FontWeight.Medium),
-    bodyLarge = base.bodyLarge,
-    bodyMedium = base.bodyMedium.copy(lineHeight = 21.sp),
-    bodySmall = base.bodySmall.copy(lineHeight = 18.sp),
-    labelLarge = base.labelLarge.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp),
-    labelMedium = base.labelMedium.copy(letterSpacing = 0.3.sp),
-    labelSmall = base.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp),
+    // Display serif: brand moments, caller names, screen titles.
+    displayLarge = display(56, 500, 60, -0.5f),
+    displayMedium = display(44, 500, 48, -0.3f),
+    displaySmall = display(36, 500, 40),
+    headlineLarge = display(34, 500, 40),
+    headlineMedium = display(30, 500, 36),
+    // Interface sans: everything functional.
+    headlineSmall = ui(20, 600, 28),
+    titleLarge = ui(18, 600, 26),
+    titleMedium = ui(16, 600, 24),
+    titleSmall = ui(15, 600, 22),
+    bodyLarge = ui(16, 400, 24),
+    bodyMedium = ui(14, 400, 21),
+    bodySmall = ui(13, 400, 19, 0.1f),
+    labelLarge = ui(14, 600, 20, 0.6f),
+    labelMedium = ui(12, 500, 16, 0.4f),
+    // Refined uppercase labels (callers pass uppercase text).
+    labelSmall = ui(11, 600, 16, 2.2f),
 )
 
 private val shapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(32.dp),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable

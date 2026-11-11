@@ -1,4 +1,6 @@
-# Master Caller AI
+# KAVÉ Call
+
+*Beyond the ordinary.* A voice-announcing phone app for Android.
 
 A native Android (Kotlin + Jetpack Compose) phone app that announces incoming callers with a female
 text-to-speech voice:
@@ -16,7 +18,7 @@ Everything runs on the phone. There are no servers, accounts or paid APIs, and n
 
 During a call, the caller's photo fills the screen. The app picks the first one available:
 
-1. A photo you set **inside Master Caller AI** (*Home → Wallpapers*). It is stored only in the app, and your
+1. A photo you set **inside KAVÉ Call** (*Home → Wallpapers*). It is stored only in the app, and your
    Contacts are not changed.
 2. The contact's own photo from your Contacts / Google Phone app. Updates there are picked up automatically
    on the next call.
@@ -37,7 +39,7 @@ the person in the photo is cut out and layered **in front of** their name, like 
 
 ### Placing calls
 
-Use the built-in dial pad (*Home → Dialer*) or tap a number in your Contacts app. While Master Caller AI is
+Use the built-in dial pad (*Home → Dialer*) or tap a number in your Contacts app. While KAVÉ Call is
 the default phone app, every call (incoming and outgoing) uses its call screen.
 
 ## Tech
@@ -123,19 +125,19 @@ On first launch, the app opens the **Setup** screen. Each item explains why it i
 If you deny something, the app keeps working with reduced features. Use **App settings** on that card
 to re-enable it later.
 
-## 5. Set Master Caller AI as the default phone app
+## 5. Set KAVÉ Call as the default phone app
 
 Setup → **Default phone app → Set as default**, then confirm in the system dialog.
 
 If the dialog doesn't appear (Android hides it after you deny it twice), tap **Default apps settings**
-and choose *Phone app → Master Caller AI*. On vivo / Funtouch OS this is
+and choose *Phone app → KAVÉ Call*. On vivo / Funtouch OS this is
 *Settings → Apps → Default apps → Phone*.
 
 To undo, pick your old phone app (for example *Phone by Google*) in the same place.
 
-> While Master Caller AI is the default, it handles **all** calls, including outgoing calls placed
+> While KAVÉ Call is the default, it handles **all** calls, including outgoing calls placed
 > from the Contacts app. The call log is still recorded by Android and is visible in the Contacts or
-> Google Phone app. Master Caller AI does not have its own call-history screen.
+> Google Phone app. KAVÉ Call does not have its own call-history screen.
 
 ## 6. Test with real incoming calls
 
@@ -178,7 +180,7 @@ adb logcat -s CallManager AudioRouteManager AnnouncementHelper SpeechCommandMana
 * **Full-screen intents on Android 14+** may be off for sideloaded apps. Enable *Full-screen call alerts*
   in Setup.
 * **vivo / Xiaomi / Oppo battery managers** can delay starting apps. If the call screen is slow to
-  appear, set Master Caller AI's battery usage to *Unrestricted* and allow *Display over lock screen*
+  appear, set KAVÉ Call's battery usage to *Unrestricted* and allow *Display over lock screen*
   and *Pop-up windows* in the app's permission settings.
 * **Dual-SIM:** if no default calling SIM is set, the call screen shows a SIM picker. This needs the
   Phone permission.
@@ -191,3 +193,11 @@ adb logcat -s CallManager AudioRouteManager AnnouncementHelper SpeechCommandMana
 * No internet permission is requested by the app itself. Speech recognition may use the network inside
   the Google app if offline packs are missing.
 * No call audio is ever recorded. `allowBackup` is disabled so settings aren't copied to cloud backups.
+
+## Brand & fonts
+
+* Visual identity: KAVÉ monogram and wordmark (from the official brand artwork), with Obsidian, Graphite,
+  Champagne and Ivory colours.
+* Fonts are bundled in `app/src/main/res/font`, so the app works offline:
+  **Manrope** (interface) and **Cormorant Garamond** (display). Both are under the SIL Open Font License; see `licenses/`.
+* The package id stays `com.kaif.mastercaller`, so existing installs and settings carry over.

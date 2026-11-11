@@ -5,12 +5,13 @@ enum class PosterFont(val label: String) { MODERN("Modern"), CLASSIC("Classic"),
 
 /** Name colours (ARGB). */
 enum class PosterColor(val label: String, val argb: Long) {
-    WHITE("White", 0xFFFFFFFF),
-    CORAL("Coral", 0xFFFF8F70),
-    LAVENDER("Lavender", 0xFFB4A7FF),
-    MINT("Mint", 0xFF7FDCC0),
-    HONEY("Honey", 0xFFF6C772),
-    ROSE("Rose", 0xFFFF9EC4),
+    WHITE("Ivory", 0xFFF1EDE3),
+    CHAMPAGNE("Champagne", 0xFFB9A27B),
+    SOFT_CHAMPAGNE("Soft champagne", 0xFFD3C2A2),
+    PURE("White", 0xFFFFFFFF),
+    SAGE("Sage", 0xFF9EBE9C),
+    CLAY("Clay", 0xFFC77B73),
+    OBSIDIAN("Obsidian", 0xFF151718),
 }
 
 /**

@@ -51,7 +51,7 @@ import com.kaif.mastercaller.ui.theme.McColors
 
 /**
  * Minimal dial pad. Handling ACTION_DIAL is required to hold the default phone app role, and it lets
- * you place calls while Master Caller AI is the default dialer.
+ * you place calls while KAVÉ Call is the default dialer.
  */
 class DialerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
