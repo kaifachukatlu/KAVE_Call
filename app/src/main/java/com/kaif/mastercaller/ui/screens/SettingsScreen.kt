@@ -68,7 +68,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: () -> Unit, onOpenWallpapers: () -> Unit) {
     val app = MasterCallerApp.instance
     val context = LocalContext.current
     val settings by app.settingsRepository.settings.collectAsStateWithLifecycle()
@@ -319,6 +319,9 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                     )
                 }
             }
+
+            SectionLabel("Call screen")
+            SecondaryButton("Call wallpapers", onClick = onOpenWallpapers, modifier = Modifier.fillMaxWidth())
 
             SectionLabel("Setup")
             SecondaryButton("Permissions & default phone app", onClick = onOpenSetup, modifier = Modifier.fillMaxWidth())

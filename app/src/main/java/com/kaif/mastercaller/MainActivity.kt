@@ -21,9 +21,10 @@ import com.kaif.mastercaller.ui.screens.SettingsScreen
 import com.kaif.mastercaller.ui.screens.SetupScreen
 import com.kaif.mastercaller.ui.screens.SetupStatus
 import com.kaif.mastercaller.ui.screens.VoiceSelectionScreen
+import com.kaif.mastercaller.ui.screens.WallpapersScreen
 import com.kaif.mastercaller.ui.theme.MasterCallerTheme
 
-enum class Screen { HOME, SETUP, SETTINGS, VOICES }
+enum class Screen { HOME, SETUP, SETTINGS, VOICES, WALLPAPERS }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +48,7 @@ private fun AppRoot() {
     }
     val back: () -> Unit = {
         screen = when (screen) {
-            Screen.VOICES -> if (previous == Screen.SETTINGS) Screen.SETTINGS else Screen.HOME
+            Screen.VOICES, Screen.WALLPAPERS -> if (previous == Screen.SETTINGS) Screen.SETTINGS else Screen.HOME
             else -> Screen.HOME
         }
     }
@@ -63,14 +64,17 @@ private fun AppRoot() {
                 onOpenSettings = { go(Screen.SETTINGS) },
                 onOpenSetup = { go(Screen.SETUP) },
                 onOpenVoices = { go(Screen.VOICES) },
+                onOpenWallpapers = { go(Screen.WALLPAPERS) },
             )
             Screen.SETUP -> SetupScreen(onBack = back, onDone = { screen = Screen.HOME })
             Screen.SETTINGS -> SettingsScreen(
                 onBack = back,
                 onOpenVoices = { go(Screen.VOICES) },
                 onOpenSetup = { go(Screen.SETUP) },
+                onOpenWallpapers = { go(Screen.WALLPAPERS) },
             )
             Screen.VOICES -> VoiceSelectionScreen(onBack = back)
+            Screen.WALLPAPERS -> WallpapersScreen(onBack = back)
         }
     }
 }

@@ -42,6 +42,7 @@ object CallManager {
     private class Tracked(val id: String, val call: Call) {
         var callback: Call.Callback? = null
         var contact: ContactMatch? = null
+        var wallpaper: android.net.Uri? = null
         var resolved = false
         var reportedPhase: CallPhase? = null
         var sawRinging = false
@@ -75,8 +76,16 @@ object CallManager {
 
         val number = numberOf(call)
         val contacts = MasterCallerApp.instance.contacts
+        val wallpapers = MasterCallerApp.instance.wallpapers
         scope.launch {
             val match = withTimeoutOrNull(2_500) { withContext(Dispatchers.IO) { contacts.lookup(number) } }
+            // App-only photo for this contact -> contact's own photo -> app default -> built-in background.
+            t.wallpaper = withContext(Dispatchers.IO) {
+                wallpapers.forContact(match?.lookupKey)
+                    ?: match?.fullPhotoUri
+                    ?: match?.photoUri
+                    ?: wallpapers.default()
+            }
             t.contact = match
             t.resolved = true
             sync(t)
@@ -244,7 +253,7 @@ object CallManager {
             number = if (presentationAllowed) numberOf(call) else null,
             contactName = contact?.name ?: systemName,
             photoUri = contact?.photoUri,
-            wallpaperUri = contact?.fullPhotoUri ?: contact?.photoUri,
+            wallpaperUri = wallpaper,
             ringtoneUri = contact?.ringtoneUri,
             phase = phaseOf(call.stateCompat()),
             isIncoming = isIncoming,

@@ -2,6 +2,7 @@ package com.kaif.mastercaller
 
 import android.app.Application
 import com.kaif.mastercaller.contacts.ContactHelper
+import com.kaif.mastercaller.contacts.WallpaperStore
 import com.kaif.mastercaller.data.SettingsRepository
 import com.kaif.mastercaller.notifications.CallNotificationManager
 import com.kaif.mastercaller.voice.AnnouncementHelper
@@ -23,12 +24,15 @@ class MasterCallerApp : Application() {
         private set
     lateinit var speech: SpeechCommandManager
         private set
+    lateinit var wallpapers: WallpaperStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
         instance = this
         settingsRepository = SettingsRepository(this, appScope)
         contacts = ContactHelper(this)
+        wallpapers = WallpaperStore(this)
         // TTS is initialised eagerly so it is warm by the time a call rings.
         announcer = AnnouncementHelper(this, settingsRepository, appScope)
         speech = SpeechCommandManager(this)

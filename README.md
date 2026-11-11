@@ -12,6 +12,22 @@ Everything runs on the phone. There are no servers, accounts or paid APIs, and n
 
 ---
 
+### Call wallpapers
+
+During a call, the caller's photo fills the screen. The app picks the first one available:
+
+1. A photo you set **inside Master Caller AI** (*Home → Wallpapers*). It is stored only in the app, and your
+   Contacts are not changed.
+2. The contact's own photo from your Contacts / Google Phone app. Updates there are picked up automatically
+   on the next call.
+3. Your **default wallpaper** from *Wallpapers*, used for unknown numbers and contacts without a photo.
+4. The built-in background.
+
+### Placing calls
+
+Use the built-in dial pad (*Home → Dialer*) or tap a number in your Contacts app. While Master Caller AI is
+the default phone app, every call (incoming and outgoing) uses its call screen.
+
 ## Tech
 
 | Area | Implementation |

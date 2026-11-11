@@ -17,6 +17,8 @@ data class ContactMatch(
     val ringtoneUri: Uri?,
     /** Full-resolution contact photo, used as the call-screen wallpaper. */
     val fullPhotoUri: Uri? = null,
+    /** Stable contact id (survives edits/syncs); keys app-only wallpapers. */
+    val lookupKey: String? = null,
 )
 
 /** Resolves phone numbers against the local contacts database via ContactsContract.PhoneLookup. */
@@ -37,6 +39,7 @@ class ContactHelper(context: Context) {
             ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI,
             ContactsContract.PhoneLookup.CUSTOM_RINGTONE,
             ContactsContract.PhoneLookup.PHOTO_URI,
+            ContactsContract.PhoneLookup.LOOKUP_KEY,
         )
         return try {
             appContext.contentResolver.query(uri, projection, null, null, null)?.use { c ->
@@ -48,12 +51,26 @@ class ContactHelper(context: Context) {
                     photoUri = c.getString(1)?.let { Uri.parse(it) },
                     ringtoneUri = c.getString(2)?.let { Uri.parse(it) },
                     fullPhotoUri = c.getString(3)?.let { Uri.parse(it) },
+                    lookupKey = c.getString(4),
                 )
             }
         } catch (e: Exception) {
             Log.w(TAG, "Contact lookup failed", e)
             null
         }
+    }
+
+    /** Lookup key + display name for a contact returned by the system contact picker. */
+    fun pickedContact(contactUri: Uri): Pair<String, String>? = try {
+        val projection = arrayOf(ContactsContract.Contacts.LOOKUP_KEY, ContactsContract.Contacts.DISPLAY_NAME)
+        appContext.contentResolver.query(contactUri, projection, null, null, null)?.use { c ->
+            if (!c.moveToFirst()) return@use null
+            val key = c.getString(0) ?: return@use null
+            key to (c.getString(1)?.takeIf { it.isNotBlank() } ?: "Contact")
+        }
+    } catch (e: Exception) {
+        Log.w(TAG, "Picked contact read failed", e)
+        null
     }
 
     /** Decodes a contact photo, downsampled so the longest side is at most [maxSide] px. */

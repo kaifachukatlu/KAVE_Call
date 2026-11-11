@@ -24,7 +24,7 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,7 +60,7 @@ import com.kaif.mastercaller.voice.VoiceCommand
 import com.kaif.mastercaller.voice.VoiceGender
 
 @Composable
-fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices: () -> Unit) {
+fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices: () -> Unit, onOpenWallpapers: () -> Unit) {
     val context = LocalContext.current
     val app = MasterCallerApp.instance
     val settings by app.settingsRepository.settings.collectAsStateWithLifecycle()
@@ -247,7 +247,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                     icon = Icons.Rounded.Dialpad,
                     modifier = Modifier.weight(1f),
                 )
-                SecondaryButton("Settings", onClick = onOpenSettings, icon = Icons.Rounded.Tune, modifier = Modifier.weight(1f))
+                SecondaryButton("Wallpapers", onClick = onOpenWallpapers, icon = Icons.Rounded.Wallpaper, modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(24.dp))
         }
