@@ -108,7 +108,8 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 else -> "Good evening"
             }
             Text(
-                "$greeting,\n${settings.personalTitle.ifBlank { "there" }}",
+                // Same greeting on every phone; the personal title is only used in the spoken announcement.
+                "$greeting,\nBoss",
                 style = MaterialTheme.typography.displaySmall,
                 color = McColors.TextPrimary,
             )
