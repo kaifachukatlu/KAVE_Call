@@ -151,6 +151,18 @@ class PhoneDirectory(context: Context) {
         null
     }
 
+    /** Adds/removes a contact from Favourites (the same "starred" flag Google Phone and Contacts use). */
+    fun setFavourite(contactId: Long, favourite: Boolean): Boolean = try {
+        val values = android.content.ContentValues().apply { put(ContactsContract.Contacts.STARRED, if (favourite) 1 else 0) }
+        appContext.contentResolver.update(
+            android.content.ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId),
+            values, null, null,
+        ) > 0
+    } catch (e: Exception) {
+        Log.w(TAG, "Favourite update failed", e)
+        false
+    }
+
     private fun granted(p: String) =
         ContextCompat.checkSelfPermission(appContext, p) == PackageManager.PERMISSION_GRANTED
 

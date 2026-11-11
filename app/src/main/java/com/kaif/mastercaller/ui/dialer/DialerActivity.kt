@@ -31,6 +31,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -106,6 +108,7 @@ class DialerActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_TAB = "start_tab"
+        const val TAB_FAVOURITES = "FAVOURITES"
         const val TAB_RECENTS = "RECENTS"
         const val TAB_CONTACTS = "CONTACTS"
         const val TAB_KEYPAD = "KEYPAD"
@@ -116,6 +119,7 @@ class DialerActivity : ComponentActivity() {
 }
 
 private enum class PhoneTab(val label: String, val icon: ImageVector) {
+    FAVOURITES("Favourites", Icons.Rounded.Star),
     RECENTS("Recents", Icons.Rounded.History),
     CONTACTS("Contacts", Icons.Rounded.Contacts),
     KEYPAD("Keypad", Icons.Rounded.Dialpad),
@@ -165,6 +169,7 @@ private fun PhoneScreen(initialNumber: String, startTab: String?, onBack: () -> 
                 contactsVersion++
                 detail = null
             },
+            onChanged = { contactsVersion++ },
         )
         return
     }
@@ -182,6 +187,7 @@ private fun PhoneScreen(initialNumber: String, startTab: String?, onBack: () -> 
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (tab) {
+                    PhoneTab.FAVOURITES -> FavouritesTab(directory, contactsVersion, call, onOpen = { detail = it })
                     PhoneTab.RECENTS -> RecentsTab(directory, call)
                     PhoneTab.CONTACTS -> ContactsTab(directory, contactsVersion, call, onOpen = { detail = it })
                     PhoneTab.KEYPAD -> KeypadTab(initialNumber, call)
@@ -371,6 +377,63 @@ private fun ContactRow(c: PhoneContact, onOpen: () -> Unit, call: (String) -> Un
     }
 }
 
+// --- Favourites -----------------------------------------------------------------------------------
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun FavouritesTab(directory: PhoneDirectory, version: Int, call: (String) -> Unit, onOpen: (PhoneContact) -> Unit) {
+    var allowed by remember { mutableStateOf(directory.canReadContacts()) }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        allowed = directory.canReadContacts()
+    }
+    if (!allowed) {
+        PermissionAsk("Allow contacts to see your favourites.", "Allow contacts") {
+            permission.launch(Manifest.permission.READ_CONTACTS)
+        }
+        return
+    }
+    val favourites by produceState<List<PhoneContact>?>(null, allowed, version) {
+        value = withContext(Dispatchers.IO) { directory.loadContacts().filter { it.starred } }
+    }
+    val list = favourites ?: return
+    if (list.isEmpty()) {
+        EmptyNote("No favourites yet.\nOpen a contact and tap the star to add them here.")
+        return
+    }
+    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+        columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(list.size, key = { list[it].id }) { i ->
+            val c = list[i]
+            Column(
+                Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .combinedClickable(onClick = { call(c.numbers.first().number) }, onLongClick = { onOpen(c) })
+                    .padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(Modifier.border(1.dp, McColors.Accent.copy(alpha = 0.45f), CircleShape).padding(3.dp)) {
+                    SmallAvatar(c.name, c.photoUri, 78.dp)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    c.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = McColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+                Text(c.numbers.first().label, style = MaterialTheme.typography.bodySmall, color = McColors.TextMuted, maxLines = 1)
+            }
+        }
+    }
+}
+
 // --- Keypad ---------------------------------------------------------------------------------------
 
 @Composable
@@ -380,7 +443,8 @@ private fun KeypadTab(initial: String, call: (String) -> Unit) {
         Modifier.fillMaxSize().padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.weight(1f))
+      Spacer(Modifier.weight(1f))
+      Column(Modifier.widthIn(max = 380.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.size(48.dp))
             Text(
@@ -410,7 +474,8 @@ private fun KeypadTab(initial: String, call: (String) -> Unit) {
             enabled = number.isNotBlank(),
             onClick = { call(number) },
         )
-        Spacer(Modifier.height(12.dp))
+      }
+      Spacer(Modifier.weight(1f)) // equal space above and below: the keypad sits in the centre
     }
 }
 

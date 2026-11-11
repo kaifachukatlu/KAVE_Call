@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Dialpad
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.SystemUpdate
 import com.kaif.mastercaller.ui.components.ControlTile
 import androidx.compose.material.icons.rounded.Contacts
@@ -77,10 +78,18 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
     val tts by app.announcer.status.collectAsStateWithLifecycle()
 
     var snap by remember { mutableStateOf(SetupStatus.snapshot(context)) }
-    var hour by remember { mutableStateOf(currentHour()) }
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    var resumes by remember { mutableStateOf(0) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis() // live clock + greeting
+            kotlinx.coroutines.delay(15_000)
+        }
+    }
     LifecycleResumeEffect(Unit) {
         snap = SetupStatus.snapshot(context)
-        hour = currentHour() // refresh the greeting whenever the app comes back to the front
+        now = System.currentTimeMillis()
+        resumes++ // reload favourites when coming back
         app.updates.check() // free GitHub update check, at most every few hours
         onPauseOrDispose { app.speech.cancel() }
     }
@@ -110,89 +119,54 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                     Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = McColors.TextSecondary)
                 }
             }
-            Spacer(Modifier.height(36.dp))
-            val greeting = greetingFor(hour)
-            Text(
-                // Same greeting on every phone; the personal title is only used in the spoken announcement.
-                "$greeting,\nBoss",
-                style = MaterialTheme.typography.displaySmall,
-                color = McColors.TextPrimary,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "BEYOND THE ORDINARY",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 3.sp),
-                color = McColors.TextMuted,
-            )
+            Spacer(Modifier.height(24.dp))
+            val hourNow = java.util.Calendar.getInstance().apply { timeInMillis = now }.get(java.util.Calendar.HOUR_OF_DAY)
+            HeroCard(nowMillis = now, greeting = greetingFor(hourNow))
 
             UpdateCard()
 
-            SectionLabel("Status")
-            StatusCard(
-                icon = Icons.Rounded.Call,
-                hue = McColors.Accent,
-                title = "Default phone app",
-                detail = if (snap.isDefaultDialer) {
-                    "KAVÉ Call handles your incoming calls"
-                } else {
-                    "Not set. Calls still use your old phone app"
-                },
-                ok = snap.isDefaultDialer,
-                chip = if (snap.isDefaultDialer) "Active" else "Set up",
-                onClick = onOpenSetup,
-            )
-            Spacer(Modifier.height(12.dp))
-            val assistantOk = settings.announcementsEnabled && tts.state == TtsState.READY
-            StatusCard(
-                icon = Icons.Rounded.RecordVoiceOver,
-                hue = McColors.Accent,
-                title = "Voice assistant",
-                detail = buildString {
-                    append(if (settings.announcementsEnabled) "Announcements on" else "Announcements off")
-                    append(" · ")
-                    append(
-                        when {
-                            !settings.voiceCommandsEnabled -> "voice commands off"
-                            !snap.microphone -> "mic permission needed"
-                            else -> "voice commands on"
-                        },
-                    )
-                    if (!snap.contacts) append(" · contacts permission needed")
-                    if (tts.state == TtsState.FAILED) append("\n" + (tts.message ?: "Text-to-speech unavailable"))
-                },
-                ok = assistantOk && snap.contacts,
-                chip = when {
-                    tts.state == TtsState.INITIALIZING -> "Starting"
-                    assistantOk && snap.contacts -> "Ready"
-                    else -> "Check"
-                },
-                onClick = if (snap.contacts && snap.microphone) onOpenSettings else onOpenSetup,
-            )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
+            val assistantOk = settings.announcementsEnabled && tts.state == TtsState.READY && snap.contacts
             val voice = tts.activeVoice
-            StatusCard(
-                icon = Icons.Rounded.GraphicEq,
-                hue = McColors.Accent,
-                title = "Announcement voice",
-                detail = when {
-                    voice == null && tts.state == TtsState.READY -> "Engine default voice${tts.engineLabel?.let { " · $it" } ?: ""}"
-                    voice == null -> "Loading voices…"
-                    else -> buildString {
-                        append(if (settings.voiceName == null) "Auto · " else "")
-                        append("${voice.localeLabel} · ${voice.shortName}")
-                        if (voice.gender == VoiceGender.FEMALE) append(" · likely female")
-                        if (voice.gender == VoiceGender.MALE) append(" · likely male")
-                        tts.engineLabel?.let { append("\n$it") }
-                    }
-                } + if (tts.missingData) "\nVoice data missing, tap to fix in Settings" else "",
-                ok = voice != null && !tts.missingData,
-                chip = "Change",
-                onClick = onOpenVoices,
+            ConciergeStrip(
+                listOf(
+                    ConciergeItem(
+                        ConciergeIcons.phone, "Phone app",
+                        if (snap.isDefaultDialer) "Active" else "Set up",
+                        snap.isDefaultDialer, onOpenSetup,
+                    ),
+                    ConciergeItem(
+                        ConciergeIcons.voice, "Assistant",
+                        when {
+                            tts.state == TtsState.INITIALIZING -> "Starting"
+                            assistantOk -> "Ready"
+                            else -> "Check"
+                        },
+                        assistantOk,
+                        if (snap.contacts && snap.microphone) onOpenSettings else onOpenSetup,
+                    ),
+                    ConciergeItem(
+                        ConciergeIcons.announcer, "Voice",
+                        when {
+                            voice == null -> if (tts.state == TtsState.READY) "Default" else "…"
+                            voice.gender == VoiceGender.MALE -> "Male · ${voice.shortName}"
+                            else -> "Female · ${voice.shortName}"
+                        },
+                        voice != null && !tts.missingData, onOpenVoices,
+                    ),
+                ),
+            )
+
+            FavouritesStrip(
+                refreshKey = resumes,
+                onSeeAll = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_FAVOURITES)) },
+                onAddFavourites = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_CONTACTS)) },
             )
 
             Spacer(Modifier.height(24.dp))
         }
         HomeBottomBar(
+            onFavourites = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_FAVOURITES)) },
             onRecents = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_RECENTS)) },
             onContacts = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_CONTACTS)) },
             onKeypad = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_KEYPAD)) },
@@ -204,7 +178,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
 
 /** Fixed bottom bar for quick access, like a phone app's tabs. */
 @Composable
-private fun HomeBottomBar(onRecents: () -> Unit, onContacts: () -> Unit, onKeypad: () -> Unit, onWallpapers: () -> Unit) {
+private fun HomeBottomBar(onFavourites: () -> Unit, onRecents: () -> Unit, onContacts: () -> Unit, onKeypad: () -> Unit, onWallpapers: () -> Unit) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
     Row(
         Modifier
@@ -216,6 +190,7 @@ private fun HomeBottomBar(onRecents: () -> Unit, onContacts: () -> Unit, onKeypa
             .padding(6.dp),
     ) {
         listOf(
+            Triple(Icons.Rounded.Star, "Favourites", onFavourites),
             Triple(Icons.Rounded.History, "Recents", onRecents),
             Triple(Icons.Rounded.Contacts, "Contacts", onContacts),
             Triple(Icons.Rounded.Dialpad, "Keypad", onKeypad),
@@ -231,7 +206,7 @@ private fun HomeBottomBar(onRecents: () -> Unit, onContacts: () -> Unit, onKeypa
             ) {
                 Icon(icon, null, tint = McColors.Accent, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.height(3.dp))
-                Text(label, style = MaterialTheme.typography.labelMedium, color = McColors.TextSecondary, maxLines = 1)
+                Text(label, style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.5.sp, letterSpacing = 0.sp), color = McColors.TextSecondary, maxLines = 1)
             }
         }
     }

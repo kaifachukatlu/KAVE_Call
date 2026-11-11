@@ -328,15 +328,32 @@ class AnnouncementHelper(
     }
 
     private fun attributesFor(purpose: Purpose): AudioAttributes = when (purpose) {
-        // Plays on the ring stream so it follows ring volume while the phone is ringing.
+        // With Bluetooth headphones / car audio connected, speak through them (media route);
+        // otherwise play on the ring stream so it follows ring volume while the phone is ringing.
         Purpose.CALL -> AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+            .setUsage(if (bluetoothAudioConnected()) AudioAttributes.USAGE_MEDIA else AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .build()
         Purpose.PREVIEW -> AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .build()
+    }
+
+    /** True when Bluetooth earbuds / headset / car audio are connected as an output. */
+    private fun bluetoothAudioConnected(): Boolean = try {
+        val am = appContext.getSystemService(android.media.AudioManager::class.java)
+        val bt = buildSet {
+            add(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP)
+            add(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO)
+            if (android.os.Build.VERSION.SDK_INT >= 31) {
+                add(android.media.AudioDeviceInfo.TYPE_BLE_HEADSET)
+                add(android.media.AudioDeviceInfo.TYPE_BLE_SPEAKER)
+            }
+        }
+        am?.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)?.any { it.type in bt } == true
+    } catch (e: Exception) {
+        false
     }
 
     private fun Voice.toOption(): VoiceOption {

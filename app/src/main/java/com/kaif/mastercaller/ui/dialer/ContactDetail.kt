@@ -34,6 +34,8 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +72,13 @@ import kotlinx.coroutines.withContext
  * name / numbers / email…), and a Call wallpaper section (photo, poster style, remove).
  */
 @Composable
-fun ContactDetail(contact: PhoneContact, onBack: () -> Unit, onCall: (String) -> Unit, onEdited: () -> Unit) {
+fun ContactDetail(
+    contact: PhoneContact,
+    onBack: () -> Unit,
+    onCall: (String) -> Unit,
+    onEdited: () -> Unit,
+    onChanged: () -> Unit = {},
+) {
     val app = MasterCallerApp.instance
     val context = LocalContext.current
     val store = app.wallpapers
@@ -80,6 +88,7 @@ fun ContactDetail(contact: PhoneContact, onBack: () -> Unit, onCall: (String) ->
     var refresh by remember { mutableIntStateOf(0) }
     var editingPoster by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var favourite by remember(contact.id) { mutableStateOf(contact.starred) }
 
     // This contact's KAVÉ wallpaper, else their contact photo.
     val ownWallpaper = remember(entries, key) { key?.let { store.forContact(it) } }
@@ -133,7 +142,31 @@ fun ContactDetail(contact: PhoneContact, onBack: () -> Unit, onCall: (String) ->
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = McColors.TextPrimary) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = McColors.TextPrimary) }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = {
+                    val next = !favourite
+                    app.appScope.launch {
+                        val ok = withContext(Dispatchers.IO) {
+                            com.kaif.mastercaller.contacts.PhoneDirectory(context).setFavourite(contact.id, next)
+                        }
+                        if (ok) {
+                            favourite = next
+                            onChanged()
+                            Toast.makeText(context, if (next) "Added to Favourites" else "Removed from Favourites", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Couldn't update Favourites", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }) {
+                    Icon(
+                        if (favourite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        contentDescription = if (favourite) "Remove from Favourites" else "Add to Favourites",
+                        tint = if (favourite) McColors.Accent else McColors.TextSecondary,
+                    )
+                }
+            }
 
             // Poster preview, exactly as it will look when they call.
             val shape = RoundedCornerShape(28.dp)
