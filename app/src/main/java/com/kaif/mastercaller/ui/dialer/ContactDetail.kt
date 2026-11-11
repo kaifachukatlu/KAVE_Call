@@ -228,7 +228,7 @@ fun ContactDetail(contact: PhoneContact, onBack: () -> Unit, onCall: (String) ->
 private fun syncToContacts(key: String) {
     val app = MasterCallerApp.instance
     app.appScope.launch(Dispatchers.IO) {
-        app.wallpapers.fileForContact(key)?.let { app.contacts.writeContactPhoto(key, it) }
+        app.syncWallpaperToContact(key)
     }
 }
 

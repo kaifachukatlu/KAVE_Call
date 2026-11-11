@@ -42,6 +42,22 @@ class WallpaperStore(context: Context) {
         return fileFor(lookupKey).takeIf { it.exists() }?.let { versioned(Uri.fromFile(it)) }
     }
 
+    private val syncedFile = File(dir, "synced.properties")
+
+    /** True if this contact's wallpaper hasn't been copied to Contacts yet (or changed since). */
+    fun needsContactSync(lookupKey: String): Boolean {
+        val f = fileFor(lookupKey).takeIf { it.exists() } ?: return false
+        val synced = Properties().apply { if (syncedFile.exists()) syncedFile.inputStream().use { load(it) } }
+        return synced.getProperty(lookupKey) != f.lastModified().toString()
+    }
+
+    fun markContactSynced(lookupKey: String) {
+        val f = fileFor(lookupKey).takeIf { it.exists() } ?: return
+        val synced = Properties().apply { if (syncedFile.exists()) syncedFile.inputStream().use { load(it) } }
+        synced.setProperty(lookupKey, f.lastModified().toString())
+        syncedFile.outputStream().use { synced.store(it, "Wallpapers copied to Contacts") }
+    }
+
     /** The saved JPEG for a contact (for copying into Contacts). */
     fun fileForContact(lookupKey: String): File? = fileFor(lookupKey).takeIf { it.exists() }
 

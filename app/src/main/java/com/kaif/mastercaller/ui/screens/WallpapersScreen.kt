@@ -86,7 +86,7 @@ fun WallpapersScreen(onBack: () -> Unit) {
     val doSync: (List<String>) -> Unit = { keys ->
         app.appScope.launch {
             val done = withContext(Dispatchers.IO) {
-                keys.count { k -> store.fileForContact(k)?.let { app.contacts.writeContactPhoto(k, it) } == true }
+                keys.count { k -> app.syncWallpaperToContact(k) }
             }
             Toast.makeText(
                 context,

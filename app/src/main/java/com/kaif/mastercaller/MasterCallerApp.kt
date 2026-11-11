@@ -11,6 +11,7 @@ import com.kaif.mastercaller.voice.SpeechCommandManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /** Process-wide singletons. Created again automatically if Android recreates the process. */
 class MasterCallerApp : Application() {
@@ -41,6 +42,24 @@ class MasterCallerApp : Application() {
         announcer = AnnouncementHelper(this, settingsRepository, appScope)
         speech = SpeechCommandManager(this)
         CallNotificationManager.createChannels(this)
+        syncPendingWallpapers()
+    }
+
+    /** Copies one KAVÉ wallpaper into the contact's photo (Google Phone / Contacts). Call off the main thread. */
+    fun syncWallpaperToContact(lookupKey: String): Boolean {
+        val file = wallpapers.fileForContact(lookupKey) ?: return false
+        val ok = contacts.writeContactPhoto(lookupKey, file)
+        if (ok) wallpapers.markContactSynced(lookupKey)
+        return ok
+    }
+
+    /** Catch-up: wallpapers set before the permission/option was on get copied the next time the app starts. */
+    fun syncPendingWallpapers() {
+        appScope.launch(Dispatchers.IO) {
+            if (!settingsRepository.current().syncWallpaperToContacts || !contacts.canWriteContacts()) return@launch
+            wallpapers.entries.value.map { it.lookupKey }.filter { wallpapers.needsContactSync(it) }
+                .forEach { syncWallpaperToContact(it) }
+        }
     }
 
     companion object {
