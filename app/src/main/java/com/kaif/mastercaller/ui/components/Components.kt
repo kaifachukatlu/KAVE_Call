@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -72,6 +73,8 @@ import kotlinx.coroutines.withContext
 fun McBackground(
     modifier: Modifier = Modifier,
     wallpaper: Uri? = null,
+    /** KAVÉ default call wallpaper: the gold monogram in the top-right corner (used when there's no photo). */
+    brandMark: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val photo by produceState<ImageBitmap?>(initialValue = null, wallpaper) {
@@ -113,8 +116,21 @@ fun McBackground(
                     center = origin,
                 )
             },
-        content = content,
-    )
+    ) {
+        if (brandMark) {
+            Image(
+                painter = painterResource(R.drawable.kave_monogram),
+                contentDescription = "KAVÉ",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .safeDrawingPadding()
+                    .padding(top = 14.dp, end = 22.dp)
+                    .width(46.dp),
+            )
+        }
+        content()
+    }
 }
 
 @Composable

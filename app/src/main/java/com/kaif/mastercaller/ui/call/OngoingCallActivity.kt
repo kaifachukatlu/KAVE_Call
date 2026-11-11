@@ -197,7 +197,7 @@ private fun OngoingCallScreen(
         }
     }
 
-    McBackground(wallpaper = call.wallpaperUri) {
+    McBackground(wallpaper = call.wallpaperUri, brandMark = call.wallpaperUri == null) {
         Column(
             Modifier
                 .fillMaxSize()

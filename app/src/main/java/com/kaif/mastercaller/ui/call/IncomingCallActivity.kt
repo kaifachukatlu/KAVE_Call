@@ -260,7 +260,7 @@ private fun IncomingCallScreen(
     if (wallpaper != null) {
         CallPoster(wallpaper, call.displayName, call.posterStyle, content = body)
     } else {
-        McBackground(content = body)
+        McBackground(brandMark = true, content = body)
     }
 }
 
