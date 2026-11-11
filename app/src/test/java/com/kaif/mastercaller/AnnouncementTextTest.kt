@@ -8,7 +8,17 @@ import org.junit.Test
 
 class AnnouncementTextTest {
 
-    private val defaults = AppSettings()
+    // Most tests use the original "Master Kaif" title to check its special spoken form.
+    private val defaults = AppSettings(personalTitle = AppSettings.KAIF_TITLE)
+
+    @Test
+    fun newInstallsDefaultToBoss() {
+        assertEquals("Boss", AppSettings().personalTitle)
+        assertEquals(
+            "Boss, Rahul is calling. Would you like to pick up or not?",
+            AnnouncementText.forCaller(AppSettings(), "Rahul", spoken = true),
+        )
+    }
 
     @Test
     fun knownContactUsesDefaultWording() {

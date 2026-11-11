@@ -108,7 +108,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                     Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
                 ) {
-                    listOf("Kaif", "Master Kaif", "Hero", "Boss", "Sir", "Captain", "Legend").forEach { choice ->
+                    listOf("Boss", "Sir", "Madam", "Hero", "Captain", "Legend", "Bro").forEach { choice ->
                         val selected = settings.personalTitle == choice
                         Text(
                             choice,

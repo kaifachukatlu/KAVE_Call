@@ -31,7 +31,11 @@ data class AppSettings(
     val syncWallpaperToContacts: Boolean = true,
 ) {
     companion object {
-        const val DEFAULT_TITLE = "Master Kaif"
+        /** Neutral default for everyone who installs the app; change it in Settings. */
+        const val DEFAULT_TITLE = "Boss"
+
+        /** Kept so "Master Kaif" still gets its clearer spoken form if chosen. */
+        const val KAIF_TITLE = "Master Kaif"
         const val DEFAULT_TEMPLATE = "{title}, {name} is calling. Would you like to pick up or not?"
         const val DEFAULT_UNKNOWN_TEMPLATE =
             "{title}, an unknown number {number} is calling. Would you like to pick up or not?"

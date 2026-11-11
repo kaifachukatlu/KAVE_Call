@@ -181,7 +181,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
             SectionLabel("Shortcuts")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SecondaryButton(
-                    "Dialer",
+                    "Phone",
                     onClick = { context.startActivity(Intent(context, DialerActivity::class.java)) },
                     icon = Icons.Rounded.Dialpad,
                     modifier = Modifier.weight(1f),

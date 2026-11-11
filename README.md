@@ -118,6 +118,18 @@ The output is `app\build\outputs\apk\debug\app-debug.apk`.
 * **File copy:** copy the APK to the phone and open it. Allow "Install unknown apps" for your file
   manager when asked.
 
+### Installing on someone else's phone
+
+1. Send them `app-debug.apk` (WhatsApp as a *document*, Google Drive, Telegram, USB cable, etc.).
+2. On their phone, open the file. If asked, allow **"Install unknown apps"** for the app they opened it with
+   (WhatsApp / Files / Drive).
+3. If Google Play Protect warns "unknown developer", tap **More details → Install anyway**. This happens because
+   the app isn't from the Play Store; it doesn't mean anything is wrong.
+4. Open KAVÉ Call, follow **Setup**, and set it as the default phone app. The default title is **"Boss"**;
+   each person can change it in *Settings → What should she call you?*.
+5. **Updates:** install the new APK over the old one. Settings are kept, provided the APK was built on
+   the same computer (same signing key).
+
 ## 4. Grant permissions
 
 On first launch, the app opens the **Setup** screen. Each item explains why it is needed:

@@ -16,6 +16,8 @@
     <!-- Dialer: place outgoing calls and pick a SIM on dual-SIM phones. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Recents tab in the phone section (call history, read-only). -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <!-- Ringing vibration and proximity screen-off during earpiece calls. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />

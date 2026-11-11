@@ -13,7 +13,7 @@ object AnnouncementText {
     /** User's pronunciation if set; for the untouched default title, a clearer built-in spoken form. */
     fun spokenTitle(settings: AppSettings): String = when {
         settings.titlePronunciation.isNotBlank() -> settings.titlePronunciation
-        settings.personalTitle.trim() == AppSettings.DEFAULT_TITLE -> when (lang(settings)) {
+        settings.personalTitle.trim() == AppSettings.KAIF_TITLE -> when (lang(settings)) {
             "hi" -> AppSettings.DEFAULT_TITLE_SPOKEN_HI
             "ur" -> AppSettings.DEFAULT_TITLE_SPOKEN_UR
             "te" -> AppSettings.DEFAULT_TITLE_SPOKEN_TE
