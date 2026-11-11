@@ -326,6 +326,31 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
             SectionLabel("Call screen")
             SecondaryButton("Call wallpapers", onClick = onOpenWallpapers, modifier = Modifier.fillMaxWidth())
 
+            SectionLabel("About")
+            McCard {
+                val updates = app.updates
+                val upd by updates.state.collectAsStateWithLifecycle()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("KAVÉ Call v${updates.currentVersion}", style = MaterialTheme.typography.titleSmall, color = McColors.TextPrimary)
+                        Text(
+                            when (val u = upd) {
+                                com.kaif.mastercaller.update.UpdateState.Checking -> "Checking…"
+                                com.kaif.mastercaller.update.UpdateState.UpToDate -> "You have the latest version"
+                                is com.kaif.mastercaller.update.UpdateState.Available -> "v${u.update.version} is available. See the dashboard."
+                                is com.kaif.mastercaller.update.UpdateState.Downloading -> "Downloading update…"
+                                is com.kaif.mastercaller.update.UpdateState.ReadyToInstall -> "Update downloaded"
+                                is com.kaif.mastercaller.update.UpdateState.Failed -> u.message
+                                com.kaif.mastercaller.update.UpdateState.Idle -> "Updates come free from GitHub Releases"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = McColors.TextSecondary,
+                        )
+                    }
+                    TextButton(onClick = { updates.check(force = true) }) { Text("Check", color = McColors.Accent) }
+                }
+            }
+
             SectionLabel("Setup")
             SecondaryButton("Permissions & default phone app", onClick = onOpenSetup, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))

@@ -14,8 +14,9 @@ android {
         applicationId = "com.kaif.mastercaller"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.1.0"
+        // Bump BOTH for every release; the GitHub tag must match versionName (e.g. v1.2.0).
+        versionCode = 2
+        versionName = "1.2.0"
         // Real phones are ARM; dropping x86 builds of ML Kit's native code keeps the APK much smaller.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
@@ -68,4 +69,6 @@ dependencies {
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for unit tests (Android's copy is a stub on the JVM).
+    testImplementation("org.json:json:20240303")
 }

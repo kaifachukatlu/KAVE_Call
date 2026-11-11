@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Dialpad
+import androidx.compose.material.icons.rounded.SystemUpdate
 import com.kaif.mastercaller.ui.components.ControlTile
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.History
@@ -75,6 +76,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
     LifecycleResumeEffect(Unit) {
         snap = SetupStatus.snapshot(context)
         hour = currentHour() // refresh the greeting whenever the app comes back to the front
+        app.updates.check() // free GitHub update check, at most every few hours
         onPauseOrDispose { app.speech.cancel() }
     }
 
@@ -153,6 +155,8 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            UpdateCard()
 
             SectionLabel("Status")
             StatusCard(
@@ -254,4 +258,70 @@ internal fun greetingFor(hour: Int): String = when (hour) {
     in 12..16 -> "Good afternoon"
     in 17..20 -> "Good evening"
     else -> "Good night"
+}
+
+/** "Update available" card, shown only when GitHub has a newer release (or while downloading). */
+@Composable
+private fun UpdateCard() {
+    val updates = MasterCallerApp.instance.updates
+    val state by updates.state.collectAsStateWithLifecycle()
+    val s = state
+    val update = when (s) {
+        is com.kaif.mastercaller.update.UpdateState.Available -> s.update
+        is com.kaif.mastercaller.update.UpdateState.Downloading -> s.update
+        is com.kaif.mastercaller.update.UpdateState.ReadyToInstall -> s.update
+        else -> null
+    }
+    if (update == null && s !is com.kaif.mastercaller.update.UpdateState.Failed) return
+    Spacer(Modifier.height(20.dp))
+    McCard(highlight = true) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconBadge(Icons.Rounded.SystemUpdate, tint = McColors.Accent)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (update != null) "Update available · v${update.version}" else "Update",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = McColors.TextPrimary,
+                )
+                Text(
+                    when (s) {
+                        is com.kaif.mastercaller.update.UpdateState.Downloading -> "Downloading… ${(s.progress * 100).toInt()}%"
+                        is com.kaif.mastercaller.update.UpdateState.ReadyToInstall -> "Downloaded. Tap Install."
+                        is com.kaif.mastercaller.update.UpdateState.Failed -> s.message
+                        else -> update?.notes?.lineSequence()?.firstOrNull()?.takeIf { it.isNotBlank() }
+                            ?: "You're on v${updates.currentVersion}. Your settings are kept."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = McColors.TextSecondary,
+                    maxLines = 2,
+                )
+            }
+        }
+        if (s is com.kaif.mastercaller.update.UpdateState.Downloading) {
+            Spacer(Modifier.height(12.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { s.progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = McColors.Accent,
+                trackColor = McColors.Surface3,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            when {
+                s is com.kaif.mastercaller.update.UpdateState.ReadyToInstall ->
+                    PrimaryButton("Install", onClick = { updates.install() })
+                s is com.kaif.mastercaller.update.UpdateState.Failed ->
+                    SecondaryButton("Try again", onClick = { updates.check(force = true) })
+                update != null && s !is com.kaif.mastercaller.update.UpdateState.Downloading ->
+                    PrimaryButton("Update now", onClick = { updates.downloadAndInstall(update) })
+            }
+            if (s !is com.kaif.mastercaller.update.UpdateState.Downloading) {
+                androidx.compose.material3.TextButton(onClick = { updates.dismiss() }) {
+                    Text("Later", color = McColors.TextMuted)
+                }
+            }
+        }
+    }
 }

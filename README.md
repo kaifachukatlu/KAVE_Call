@@ -127,8 +127,17 @@ The output is `app\build\outputs\apk\debug\app-debug.apk`.
    the app isn't from the Play Store; it doesn't mean anything is wrong.
 4. Open KAVÉ Call, follow **Setup**, and set it as the default phone app. The default title is **"Boss"**;
    each person can change it in *Settings → What should she call you?*.
-5. **Updates:** install the new APK over the old one. Settings are kept, provided the APK was built on
-   the same computer (same signing key).
+5. **Updates:** KAVÉ checks GitHub Releases for a newer version (on opening the app, at most every 6 hours;
+   or *Settings → About → Check*). When one exists, the dashboard shows **Update available → Update now**.
+   It downloads the APK and Android asks to install it; settings are kept.
+
+### Publishing an update (free, no Play Store)
+
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts` (e.g. 3 / `1.3.0`) and build.
+2. On GitHub: **Releases → Draft a new release**, tag **`v1.3.0`** (must match `versionName`), attach the APK,
+   **Publish**.
+3. Every installed copy (v1.2.0 or newer) offers the update. Always build on the same computer:
+   the signing key in `%USERPROFILE%\.android\debug.keystore` must stay the same, so back it up.
 
 ## 4. Grant permissions
 
