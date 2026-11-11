@@ -71,8 +71,10 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
     val tts by app.announcer.status.collectAsStateWithLifecycle()
 
     var snap by remember { mutableStateOf(SetupStatus.snapshot(context)) }
+    var hour by remember { mutableStateOf(currentHour()) }
     LifecycleResumeEffect(Unit) {
         snap = SetupStatus.snapshot(context)
+        hour = currentHour() // refresh the greeting whenever the app comes back to the front
         onPauseOrDispose { app.speech.cancel() }
     }
 
@@ -101,12 +103,7 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 }
             }
             Spacer(Modifier.height(36.dp))
-            val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
-            val greeting = when (hour) {
-                in 5..11 -> "Good morning"
-                in 12..16 -> "Good afternoon"
-                else -> "Good evening"
-            }
+            val greeting = greetingFor(hour)
             Text(
                 // Same greeting on every phone; the personal title is only used in the spoken announcement.
                 "$greeting,\nBoss",
@@ -247,4 +244,14 @@ private fun StatusCard(
             StatusChip(chip, ok)
         }
     }
+}
+
+private fun currentHour(): Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+
+/** Morning 5-11, afternoon 12-16, evening 17-20, night 21-4. */
+internal fun greetingFor(hour: Int): String = when (hour) {
+    in 5..11 -> "Good morning"
+    in 12..16 -> "Good afternoon"
+    in 17..20 -> "Good evening"
+    else -> "Good night"
 }
