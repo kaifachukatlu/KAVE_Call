@@ -17,7 +17,14 @@ data class PhoneContact(
     val photoUri: Uri?,
     val starred: Boolean,
     val numbers: List<PhoneNumber>,
-)
+    val lookupKey: String? = null,
+    val fullPhotoUri: Uri? = null,
+) {
+    /** Stable link to this contact (survives syncs); used to open Android's contact editor. */
+    val contactUri: Uri
+        get() = if (lookupKey != null) ContactsContract.Contacts.getLookupUri(id, lookupKey)
+        else android.content.ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id)
+}
 
 enum class CallKind { INCOMING, OUTGOING, MISSED, REJECTED, BLOCKED, OTHER }
 
@@ -52,6 +59,8 @@ class PhoneDirectory(context: Context) {
             ContactsContract.CommonDataKinds.Phone.LABEL,
             ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
             ContactsContract.CommonDataKinds.Phone.STARRED,
+            ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY,
+            ContactsContract.CommonDataKinds.Phone.PHOTO_URI,
         )
         try {
             appContext.contentResolver.query(
@@ -71,6 +80,7 @@ class PhoneDirectory(context: Context) {
                     if (existing == null) {
                         byId[id] = PhoneContact(
                             id, name, c.getString(5)?.let(Uri::parse), c.getInt(6) == 1, listOf(PhoneNumber(number, label)),
+                            lookupKey = c.getString(7), fullPhotoUri = c.getString(8)?.let(Uri::parse),
                         )
                     } else if (existing.numbers.none { it.number.filter { ch -> ch.isDigit() || ch == '+' } == normalized }) {
                         byId[id] = existing.copy(numbers = existing.numbers + PhoneNumber(number, label))

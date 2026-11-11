@@ -5,6 +5,11 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -81,10 +86,11 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
     }
 
     McBackground {
+      Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         Column(
             Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
@@ -118,43 +124,6 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 3.sp),
                 color = McColors.TextMuted,
             )
-
-            // Quick access, like a phone app's tabs.
-            Spacer(Modifier.height(28.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ControlTile(
-                    icon = Icons.Rounded.History,
-                    label = "Recents",
-                    active = false,
-                    square = false,
-                    onClick = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_RECENTS)) },
-                    modifier = Modifier.weight(1f),
-                )
-                ControlTile(
-                    icon = Icons.Rounded.Contacts,
-                    label = "Contacts",
-                    active = false,
-                    square = false,
-                    onClick = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_CONTACTS)) },
-                    modifier = Modifier.weight(1f),
-                )
-                ControlTile(
-                    icon = Icons.Rounded.Dialpad,
-                    label = "Keypad",
-                    active = false,
-                    square = false,
-                    onClick = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_KEYPAD)) },
-                    modifier = Modifier.weight(1f),
-                )
-                ControlTile(
-                    icon = Icons.Rounded.Wallpaper,
-                    label = "Wallpapers",
-                    active = false,
-                    square = false,
-                    onClick = onOpenWallpapers,
-                    modifier = Modifier.weight(1f),
-                )
-            }
 
             UpdateCard()
 
@@ -222,6 +191,48 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenSetup: () -> Unit, onOpenVoices
             )
 
             Spacer(Modifier.height(24.dp))
+        }
+        HomeBottomBar(
+            onRecents = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_RECENTS)) },
+            onContacts = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_CONTACTS)) },
+            onKeypad = { context.startActivity(DialerActivity.intent(context, DialerActivity.TAB_KEYPAD)) },
+            onWallpapers = onOpenWallpapers,
+        )
+      }
+    }
+}
+
+/** Fixed bottom bar for quick access, like a phone app's tabs. */
+@Composable
+private fun HomeBottomBar(onRecents: () -> Unit, onContacts: () -> Unit, onKeypad: () -> Unit, onWallpapers: () -> Unit) {
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .clip(shape)
+            .background(McColors.Surface)
+            .border(1.dp, McColors.Outline, shape)
+            .padding(6.dp),
+    ) {
+        listOf(
+            Triple(Icons.Rounded.History, "Recents", onRecents),
+            Triple(Icons.Rounded.Contacts, "Contacts", onContacts),
+            Triple(Icons.Rounded.Dialpad, "Keypad", onKeypad),
+            Triple(Icons.Rounded.Wallpaper, "Wallpapers", onWallpapers),
+        ).forEach { (icon, label, action) ->
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                    .clickable(onClick = action)
+                    .padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(icon, null, tint = McColors.Accent, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.height(3.dp))
+                Text(label, style = MaterialTheme.typography.labelMedium, color = McColors.TextSecondary, maxLines = 1)
+            }
         }
     }
 }

@@ -63,6 +63,8 @@ import com.kaif.mastercaller.ui.components.ScreenHeader
 import com.kaif.mastercaller.ui.components.SecondaryButton
 import com.kaif.mastercaller.ui.components.SectionLabel
 import com.kaif.mastercaller.ui.components.SettingSwitchRow
+import com.kaif.mastercaller.ui.components.WordingEditor
+import com.kaif.mastercaller.ui.components.WordingToken
 import com.kaif.mastercaller.ui.theme.McColors
 import com.kaif.mastercaller.voice.AnnouncementHelper
 import com.kaif.mastercaller.voice.AnnouncementText
@@ -124,17 +126,18 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                DebouncedTextField(
-                    label = "Announcement (saved contacts)",
-                    value = settings.announcementTemplate,
-                    supporting = "Use {title} and {name}",
+                val you = WordingToken("title", "Your name", settings.personalTitle.ifBlank { "Boss" })
+                WordingEditor(
+                    label = "When a saved contact calls",
+                    template = settings.announcementTemplate,
+                    tokens = listOf(you, WordingToken("name", "Caller's name", "Rahul")),
                     onSave = { v -> save { it.copy(announcementTemplate = v) } },
                 )
                 Spacer(Modifier.height(12.dp))
-                DebouncedTextField(
-                    label = "Announcement (unknown numbers)",
-                    value = settings.unknownTemplate,
-                    supporting = "Use {title} and {number}",
+                WordingEditor(
+                    label = "When an unknown number calls",
+                    template = settings.unknownTemplate,
+                    tokens = listOf(you, WordingToken("number", "Their number", "98765 43210")),
                     onSave = { v -> save { it.copy(unknownTemplate = v) } },
                 )
                 TextButton(onClick = { save { it.withDefaultWording() } }) {

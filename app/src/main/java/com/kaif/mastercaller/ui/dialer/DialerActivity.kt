@@ -153,6 +153,22 @@ private fun PhoneScreen(initialNumber: String, startTab: String?, onBack: () -> 
         }
     }
 
+    var detail by remember { mutableStateOf<PhoneContact?>(null) }
+    var contactsVersion by remember { mutableIntStateOf(0) }
+    detail?.let { c ->
+        ContactDetail(
+            contact = c,
+            onBack = { detail = null },
+            onCall = call,
+            onEdited = {
+                // The contact may have been renamed/changed in the editor: reload the list and close the page.
+                contactsVersion++
+                detail = null
+            },
+        )
+        return
+    }
+
     McBackground {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             Row(
@@ -167,7 +183,7 @@ private fun PhoneScreen(initialNumber: String, startTab: String?, onBack: () -> 
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (tab) {
                     PhoneTab.RECENTS -> RecentsTab(directory, call)
-                    PhoneTab.CONTACTS -> ContactsTab(directory, call)
+                    PhoneTab.CONTACTS -> ContactsTab(directory, contactsVersion, call, onOpen = { detail = it })
                     PhoneTab.KEYPAD -> KeypadTab(initialNumber, call)
                 }
             }
@@ -272,7 +288,7 @@ private fun RecentsTab(directory: PhoneDirectory, call: (String) -> Unit) {
 // --- Contacts -------------------------------------------------------------------------------------
 
 @Composable
-private fun ContactsTab(directory: PhoneDirectory, call: (String) -> Unit) {
+private fun ContactsTab(directory: PhoneDirectory, version: Int, call: (String) -> Unit, onOpen: (PhoneContact) -> Unit) {
     var allowed by remember { mutableStateOf(directory.canReadContacts()) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         allowed = directory.canReadContacts()
@@ -283,11 +299,10 @@ private fun ContactsTab(directory: PhoneDirectory, call: (String) -> Unit) {
         }
         return
     }
-    val contacts by produceState<List<PhoneContact>?>(null, allowed) {
+    val contacts by produceState<List<PhoneContact>?>(null, allowed, version) {
         value = withContext(Dispatchers.IO) { directory.loadContacts() }
     }
     var query by rememberSaveable { mutableStateOf("") }
-    var expanded by rememberSaveable { mutableStateOf<Long?>(null) }
     val all = contacts ?: return
 
     val q = query.trim()
@@ -320,7 +335,7 @@ private fun ContactsTab(directory: PhoneDirectory, call: (String) -> Unit) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
             if (favourites.isNotEmpty()) {
                 item(key = "fav-h") { Header("Favourites", Icons.Rounded.Star) }
-                items(favourites, key = { "f${it.id}" }) { c -> ContactRow(c, expanded == c.id, { expanded = if (expanded == c.id) null else c.id }, call) }
+                items(favourites, key = { "f${it.id}" }) { c -> ContactRow(c, { onOpen(c) }, call) }
             }
             var lastLetter: Char? = null
             filtered.forEach { c ->
@@ -329,14 +344,14 @@ private fun ContactsTab(directory: PhoneDirectory, call: (String) -> Unit) {
                     lastLetter = letter
                     item(key = "h$letter${c.id}") { Header(letter.toString(), null) }
                 }
-                item(key = "c${c.id}") { ContactRow(c, expanded == c.id, { expanded = if (expanded == c.id) null else c.id }, call) }
+                item(key = "c${c.id}") { ContactRow(c, { onOpen(c) }, call) }
             }
         }
     }
 }
 
 @Composable
-private fun ContactRow(c: PhoneContact, open: Boolean, onToggle: () -> Unit, call: (String) -> Unit) {
+private fun ContactRow(c: PhoneContact, onOpen: () -> Unit, call: (String) -> Unit) {
     Column {
         ListRow(
             name = c.name,
@@ -350,29 +365,9 @@ private fun ContactRow(c: PhoneContact, open: Boolean, onToggle: () -> Unit, cal
                     overflow = TextOverflow.Ellipsis,
                 )
             },
-            onClick = onToggle,
+            onClick = onOpen,
             onCall = { call(c.numbers.first().number) },
         )
-        AnimatedVisibility(visible = open && c.numbers.size > 1) {
-            Column(Modifier.padding(start = 70.dp, end = 8.dp, bottom = 6.dp)) {
-                c.numbers.forEach { n ->
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { call(n.number) }
-                            .padding(vertical = 10.dp, horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(n.number, style = MaterialTheme.typography.bodyMedium, color = McColors.TextPrimary)
-                            Text(n.label, style = MaterialTheme.typography.bodySmall, color = McColors.TextMuted)
-                        }
-                        Icon(Icons.Rounded.Call, "Call", tint = McColors.Accent)
-                    }
-                }
-            }
-        }
     }
 }
 
