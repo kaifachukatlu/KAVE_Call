@@ -69,6 +69,9 @@ object CallManager {
         val cb = object : Call.Callback() {
             override fun onStateChanged(call: Call, state: Int) = sync(t)
             override fun onDetailsChanged(call: Call, details: Call.Details) = sync(t)
+            override fun onParentChanged(call: Call, parent: Call?) = publish()
+            override fun onChildrenChanged(call: Call, children: MutableList<Call>) = publish()
+            override fun onConferenceableCallsChanged(call: Call, conferenceableCalls: MutableList<Call>) = publish()
         }
         t.callback = cb
         call.registerCallback(cb, mainHandler)
@@ -162,7 +165,9 @@ object CallManager {
      * merges a conference's children, or conferences this call with another live call.
      */
     fun merge(id: String): Boolean {
-        val t = tracked[id] ?: return false
+        // Networks expect the merge to start from the call you're talking on.
+        val t = tracked.values.firstOrNull { phaseOf(it.call.stateCompat()) == CallPhase.ACTIVE && it.call.parent == null }
+            ?: tracked[id] ?: return false
         val c = t.call
         return try {
             when {
@@ -307,7 +312,9 @@ object CallManager {
             contactResolved = resolved,
             canMerge = details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) || call.conferenceableCalls.isNotEmpty() ||
                 tracked.values.count { phaseOf(it.call.stateCompat()) in setOf(CallPhase.ACTIVE, CallPhase.HOLDING) } >= 2,
-            isConference = details.hasProperty(Call.Details.PROPERTY_CONFERENCE),
+            isConference = details.hasProperty(Call.Details.PROPERTY_CONFERENCE) || call.children.isNotEmpty(),
+            parentId = call.parent?.let { p -> tracked.values.firstOrNull { it.call === p }?.id },
+            childIds = call.children.mapNotNull { c -> tracked.values.firstOrNull { it.call === c }?.id },
         )
     }
 }

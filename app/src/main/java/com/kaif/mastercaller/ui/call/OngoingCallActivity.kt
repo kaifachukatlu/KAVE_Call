@@ -181,10 +181,11 @@ private fun OngoingCallRoute(requestedId: String?, onFinish: () -> Unit) {
         return
     }
     val ended = !anyLive || shown.phase == CallPhase.DISCONNECTED
-    val held = calls.firstOrNull { it.id != shown.id && it.phase == CallPhase.HOLDING }
+    val held = calls.firstOrNull { it.id != shown.id && it.phase == CallPhase.HOLDING && it.parentId == null && it.id !in shown.childIds }
+    val members = shown.childIds.mapNotNull { id -> calls.firstOrNull { it.id == id && it.isLive } }
     val waiting = CallStateManager.ringing(calls)
 
-    OngoingCallScreen(shown, ended, route, held, waiting)
+    OngoingCallScreen(shown, ended, route, held, waiting, members)
 }
 
 @Composable
@@ -194,6 +195,7 @@ private fun OngoingCallScreen(
     route: AudioRouteState,
     heldCall: CallInfo?,
     waitingCall: CallInfo?,
+    members: List<CallInfo> = emptyList(),
 ) {
     var showKeypad by rememberSaveable { mutableStateOf(false) }
     var dtmf by rememberSaveable { mutableStateOf("") }
@@ -233,8 +235,23 @@ private fun OngoingCallScreen(
                 style = MaterialTheme.typography.titleMedium,
                 color = if (call.phase == CallPhase.ACTIVE && !ended) McColors.Accent else McColors.TextSecondary,
             )
-            if (call.contactName != null && call.formattedNumber != null) {
+            if (call.contactName != null && call.formattedNumber != null && !call.isConference) {
                 Text(call.formattedNumber!!, style = MaterialTheme.typography.bodyMedium, color = McColors.TextMuted)
+            }
+            // Conference: everyone who's in it, each can be dropped on their own.
+            if (call.isConference && members.isNotEmpty() && !ended) {
+                Spacer(Modifier.height(10.dp))
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(McColors.Surface2.copy(alpha = 0.85f)).padding(horizontal = 14.dp, vertical = 6.dp),
+                ) {
+                    Text("${members.size + 1} people talking: you and", style = MaterialTheme.typography.labelMedium, color = McColors.TextMuted)
+                    members.forEach { m ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(m.contactName ?: m.formattedNumber ?: "Caller", style = MaterialTheme.typography.titleSmall, color = McColors.TextPrimary, modifier = Modifier.weight(1f))
+                            TextButton(onClick = { CallManager.hangup(m.id) }) { Text("End", color = McColors.Reject) }
+                        }
+                    }
+                }
             }
             route.lastError?.let {
                 Spacer(Modifier.height(6.dp))
@@ -451,7 +468,7 @@ private fun WaitingBanner(call: CallInfo) {
 @Composable
 private fun HeldBanner(call: CallInfo) {
     Banner(
-        text = "On hold: ${call.displayName}",
+        text = "${call.displayName} is on hold",
         actions = {
             TextButton(onClick = { CallManager.unhold(call.id) }) {
                 androidx.compose.material3.Icon(Icons.Rounded.SwapCalls, null, tint = McColors.Accent)

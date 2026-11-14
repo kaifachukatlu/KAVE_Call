@@ -39,6 +39,10 @@ data class CallInfo(
     val canMerge: Boolean = false,
     /** This is a conference (two or more people). */
     val isConference: Boolean = false,
+    /** Set when this call is one of the people inside a conference. */
+    val parentId: String? = null,
+    /** For a conference: the people in it. */
+    val childIds: List<String> = emptyList(),
 ) {
     val formattedNumber: String?
         get() = number?.takeIf { it.isNotBlank() }?.let {
@@ -46,7 +50,8 @@ data class CallInfo(
         }
 
     val displayName: String
-        get() = contactName ?: formattedNumber ?: if (isPrivateNumber) "Private number" else "Unknown caller"
+        get() = if (isConference) "Conference call" else
+            contactName ?: formattedNumber ?: if (isPrivateNumber) "Private number" else "Unknown caller"
 
     val isLive: Boolean get() = phase != CallPhase.DISCONNECTED
 }
@@ -89,7 +94,8 @@ object CallStateManager {
 
     /** The call the ongoing-call screen should focus on. */
     fun primary(list: List<CallInfo> = _calls.value): CallInfo? {
-        val candidates = list.filter { it.phase != CallPhase.RINGING }
+        // People inside a conference are shown through the conference itself.
+        val candidates = list.filter { it.phase != CallPhase.RINGING && it.parentId == null }
         return candidates.firstOrNull { it.phase == CallPhase.ACTIVE }
             ?: candidates.firstOrNull { it.phase in OUTGOING_PHASES }
             ?: candidates.firstOrNull { it.phase == CallPhase.HOLDING }
