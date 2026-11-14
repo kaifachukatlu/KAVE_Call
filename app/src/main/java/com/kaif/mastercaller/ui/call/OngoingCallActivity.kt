@@ -160,7 +160,9 @@ private fun OngoingCallRoute(requestedId: String?, onFinish: () -> Unit) {
     val route by AudioRouteManager.state.collectAsStateWithLifecycle()
 
     val requested = calls.firstOrNull { it.id == requestedId && it.phase != CallPhase.RINGING }
-    val call = requested?.takeIf { it.isLive } ?: CallStateManager.primary(calls)?.takeIf { it.isLive } ?: requested
+    // Always show the person you're talking to right now: after Answer (second call) or Swap the screen
+    // follows the active call; the other person moves to the "on hold" bar.
+    val call = CallStateManager.primary(calls)?.takeIf { it.isLive } ?: requested?.takeIf { it.isLive } ?: requested
     var lastShown by remember { mutableStateOf<CallInfo?>(null) }
     if (call != null) lastShown = call
 
