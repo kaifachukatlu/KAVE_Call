@@ -358,24 +358,30 @@ private fun AudioControls(call: CallInfo, route: AudioRouteState, onOpenKeypad: 
         // Conference + recording.
         val rec by com.kaif.mastercaller.telecom.CallRecorder.state.collectAsState()
         val calls by com.kaif.mastercaller.telecom.CallStateManager.calls.collectAsState()
-        val twoCalls = calls.count { it.phase == CallPhase.ACTIVE || it.phase == CallPhase.HOLDING } >= 2
+        val twoCalls = calls.count { (it.phase == CallPhase.ACTIVE || it.phase == CallPhase.HOLDING) && it.parentId == null } >= 2
+        // Merge / Swap only make sense with a second call (added, or answered while talking).
+        val showConferenceTools = twoCalls && !call.isConference
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            ControlTile(
-                icon = Icons.Rounded.CallMerge,
-                label = if (call.isConference) "Conference" else "Merge",
-                active = call.isConference,
-                onClick = { CallManager.merge(call.id) },
-                enabled = call.canMerge && !call.isConference,
-                modifier = Modifier.weight(1f),
-            )
-            ControlTile(
-                icon = Icons.Rounded.SwapCalls,
-                label = "Swap",
-                active = false,
-                onClick = { CallManager.swap(call.id) },
-                enabled = twoCalls,
-                modifier = Modifier.weight(1f),
-            )
+            if (showConferenceTools) {
+                ControlTile(
+                    icon = Icons.Rounded.CallMerge,
+                    label = "Merge",
+                    active = false,
+                    onClick = { CallManager.merge(call.id) },
+                    enabled = true,
+                    modifier = Modifier.weight(1f),
+                )
+                ControlTile(
+                    icon = Icons.Rounded.SwapCalls,
+                    label = "Swap",
+                    active = false,
+                    onClick = { CallManager.swap(call.id) },
+                    enabled = true,
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
             ControlTile(
                 icon = if (rec.recording) Icons.Rounded.Stop else Icons.Rounded.FiberManualRecord,
                 label = if (rec.recording) "Stop rec" else "Record",
@@ -388,6 +394,7 @@ private fun AudioControls(call: CallInfo, route: AudioRouteState, onOpenKeypad: 
                 enabled = call.phase == CallPhase.ACTIVE || rec.recording,
                 modifier = Modifier.weight(1f),
             )
+            if (!showConferenceTools) Spacer(Modifier.weight(1f))
         }
         val note = when {
             rec.recording && rec.quality == com.kaif.mastercaller.telecom.CallRecorder.Quality.MIC_ONLY ->
