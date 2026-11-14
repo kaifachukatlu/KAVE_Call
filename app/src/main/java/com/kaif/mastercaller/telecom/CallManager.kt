@@ -188,6 +188,7 @@ object CallManager {
 
     /** Ends the call shown in the notification, or any live call if that one is gone (e.g. after a restart). */
     fun hangupAny(id: String?): Boolean {
+        Log.i(TAG, "hangupAny id=$id tracked=${tracked.keys} states=${tracked.values.map { it.call.stateCompat() }}")
         if (id != null && hangup(id)) return true
         val live = tracked.values.filter { phaseOf(it.call.stateCompat()) != CallPhase.DISCONNECTED }
         var done = false

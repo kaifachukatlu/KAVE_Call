@@ -54,9 +54,10 @@ class CallNotificationManager(
         val answer = PendingIntent.getActivity(
             appContext, call.id.hashCode() + 1, OngoingCallActivity.answerIntent(appContext, call.id), FLAGS,
         )
-        val decline = PendingIntent.getBroadcast(
+        // Activities, not broadcasts: some phones (vivo) block notification broadcasts.
+        val decline = PendingIntent.getActivity(
             appContext, call.id.hashCode() + 2,
-            CallActionReceiver.intent(appContext, CallActionReceiver.ACTION_DECLINE, call.id), FLAGS,
+            CallActionActivity.intent(appContext, CallActionReceiver.ACTION_DECLINE, call.id), FLAGS,
         )
         val person = Person.Builder().setName(call.displayName).setImportant(true).build()
         val notification = NotificationCompat.Builder(appContext, CHANNEL_INCOMING)
@@ -84,9 +85,9 @@ class CallNotificationManager(
         val open = PendingIntent.getActivity(
             appContext, call.id.hashCode() + 3, OngoingCallActivity.intent(appContext, call.id), FLAGS,
         )
-        val hangup = PendingIntent.getBroadcast(
+        val hangup = PendingIntent.getActivity(
             appContext, call.id.hashCode() + 4,
-            CallActionReceiver.intent(appContext, CallActionReceiver.ACTION_HANGUP, call.id), FLAGS,
+            CallActionActivity.intent(appContext, CallActionReceiver.ACTION_HANGUP, call.id), FLAGS,
         )
         val status = when (call.phase) {
             CallPhase.ACTIVE -> "Ongoing call"
@@ -106,13 +107,34 @@ class CallNotificationManager(
             .setSilent(true)
             .setColor(0xFFB9A27B.toInt())
             .setContentIntent(open)
-            .addAction(NotificationCompat.Action.Builder(null, "Hang up", hangup).build())
+            .setAutoCancel(false)
+            // Call style: a red Hang up button that shows even when the notification is collapsed.
+            .setStyle(
+                NotificationCompat.CallStyle.forOngoingCall(
+                    Person.Builder().setName(call.displayName).setImportant(true).build(), hangup,
+                ),
+            )
         if (call.phase == CallPhase.ACTIVE && call.connectTimeMillis > 0) {
             builder.setWhen(call.connectTimeMillis).setUsesChronometer(true).setShowWhen(true)
         }
         val n = builder.build()
         post(ONGOING_ID, n)
         onOngoing(ONGOING_ID, n)
+    }
+
+    /**
+     * Some phones (vivo) delete an app's notifications when it's swiped out of Recents, even during a call.
+     * If our ongoing-call notification is missing, post it again.
+     */
+    fun ensureOngoingVisible(calls: List<CallInfo>) {
+        val primary = CallStateManager.primary(calls)?.takeIf { it.isLive } ?: return
+        val nm = appContext.getSystemService(android.app.NotificationManager::class.java) ?: return
+        val showing = runCatching { nm.activeNotifications.any { it.id == ONGOING_ID } }.getOrDefault(true)
+        if (!showing) {
+            Log.i(TAG, "ongoing-call notification was removed; posting it again")
+            ongoingKey = null
+            showOngoing(primary)
+        }
     }
 
     fun cancelAll() {

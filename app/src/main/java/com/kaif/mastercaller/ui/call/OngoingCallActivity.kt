@@ -458,6 +458,11 @@ private fun HeldBanner(call: CallInfo) {
                 Spacer(Modifier.width(4.dp))
                 Text("Swap", color = McColors.Accent)
             }
+            TextButton(onClick = { CallManager.merge(call.id) }) {
+                androidx.compose.material3.Icon(Icons.Rounded.CallMerge, null, tint = McColors.Accent)
+                Spacer(Modifier.width(4.dp))
+                Text("Merge", color = McColors.Accent)
+            }
         },
     )
 }

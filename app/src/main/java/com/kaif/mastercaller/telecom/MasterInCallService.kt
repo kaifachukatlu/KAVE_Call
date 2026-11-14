@@ -124,8 +124,20 @@ class MasterInCallService : InCallService(), CallManager.Listener {
         launch(OngoingCallActivity.intent(this, callId))
     }
 
+    private val watchdog = android.os.Handler(android.os.Looper.getMainLooper())
+    private val keepNotification = object : Runnable {
+        override fun run() {
+            val calls = CallStateManager.calls.value
+            if (calls.none { it.isLive }) return
+            notifications.ensureOngoingVisible(calls)
+            watchdog.postDelayed(this, 2_000)
+        }
+    }
+
     override fun onCallsChanged(calls: List<CallInfo>) {
         notifications.update(calls)
+        watchdog.removeCallbacks(keepNotification)
+        if (calls.any { it.isLive }) watchdog.postDelayed(keepNotification, 2_000)
         if (calls.none { it.isLive }) {
             AudioRouteManager.resetForNextCall()
             CallRecorder.stop(this)

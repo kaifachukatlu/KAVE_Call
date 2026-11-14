@@ -10,6 +10,7 @@ class CallActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra(EXTRA_CALL_ID)
+        android.util.Log.i("CallActionReceiver", "action=${intent.action} id=$id hasCalls=${CallManager.hasCalls()}")
         when (intent.action) {
             ACTION_DECLINE -> if (id == null || !CallManager.reject(id)) endViaTelecom(context)
             ACTION_HANGUP -> if (!CallManager.hangupAny(id)) endViaTelecom(context)

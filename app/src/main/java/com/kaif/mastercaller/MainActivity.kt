@@ -32,6 +32,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent { MasterCallerTheme { AppRoot() } }
     }
+
+    override fun onResume() {
+        super.onResume()
+        // A call is running (e.g. its screen was swiped away from Recents): go straight back to it.
+        com.kaif.mastercaller.telecom.CallStateManager.primary()?.takeIf { it.isLive }?.let {
+            startActivity(com.kaif.mastercaller.ui.call.OngoingCallActivity.intent(this, it.id))
+        }
+    }
 }
 
 @Composable

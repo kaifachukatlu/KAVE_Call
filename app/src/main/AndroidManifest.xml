@@ -121,6 +121,14 @@
             android:name=".notifications.CallActionReceiver"
             android:exported="false" />
 
+        <activity
+            android:name=".notifications.CallActionActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.updates"
