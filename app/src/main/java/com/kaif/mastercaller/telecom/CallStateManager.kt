@@ -35,6 +35,10 @@ data class CallInfo(
     val isPrivateNumber: Boolean,
     val disconnectLabel: String?,
     val contactResolved: Boolean,
+    /** Can be merged with another call into a conference. */
+    val canMerge: Boolean = false,
+    /** This is a conference (two or more people). */
+    val isConference: Boolean = false,
 ) {
     val formattedNumber: String?
         get() = number?.takeIf { it.isNotBlank() }?.let {

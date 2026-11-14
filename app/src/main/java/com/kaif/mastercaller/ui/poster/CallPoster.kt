@@ -58,7 +58,11 @@ fun CallPoster(
 ) {
     val images by produceState(PosterImages(null, null, false), wallpaper, style.depth) {
         val photo = withContext(Dispatchers.IO) {
-            MasterCallerApp.instance.contacts.loadPhoto(wallpaper, maxSide = 1080)
+            // Full screen resolution: no upscaling, no blur.
+            MasterCallerApp.instance.contacts.loadPhoto(
+                wallpaper,
+                maxSide = MasterCallerApp.instance.resources.displayMetrics.let { maxOf(it.widthPixels, it.heightPixels) },
+            )
         }
         value = PosterImages(photo, null, done = photo == null || !style.depth)
         if (photo != null && style.depth) {

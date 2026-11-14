@@ -1,5 +1,13 @@
 package com.kaif.mastercaller.ui.call
 
+import androidx.compose.runtime.collectAsState
+
+import androidx.compose.material.icons.rounded.Stop
+
+import androidx.compose.material.icons.rounded.FiberManualRecord
+
+import androidx.compose.material.icons.rounded.CallMerge
+
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -329,6 +337,51 @@ private fun AudioControls(call: CallInfo, route: AudioRouteState, onOpenKeypad: 
                 enabled = call.canHold || onHold,
                 modifier = Modifier.weight(1f),
             )
+        }
+        // Conference + recording.
+        val rec by com.kaif.mastercaller.telecom.CallRecorder.state.collectAsState()
+        val calls by com.kaif.mastercaller.telecom.CallStateManager.calls.collectAsState()
+        val twoCalls = calls.count { it.phase == CallPhase.ACTIVE || it.phase == CallPhase.HOLDING } >= 2
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            ControlTile(
+                icon = Icons.Rounded.CallMerge,
+                label = if (call.isConference) "Conference" else "Merge",
+                active = call.isConference,
+                onClick = { CallManager.merge(call.id) },
+                enabled = call.canMerge && !call.isConference,
+                modifier = Modifier.weight(1f),
+            )
+            ControlTile(
+                icon = Icons.Rounded.SwapCalls,
+                label = "Swap",
+                active = false,
+                onClick = { CallManager.swap(call.id) },
+                enabled = twoCalls,
+                modifier = Modifier.weight(1f),
+            )
+            ControlTile(
+                icon = if (rec.recording) Icons.Rounded.Stop else Icons.Rounded.FiberManualRecord,
+                label = if (rec.recording) "Stop rec" else "Record",
+                active = rec.recording,
+                onClick = {
+                    val r = com.kaif.mastercaller.telecom.CallRecorder
+                    if (rec.recording) r.stop(context) else r.start(context, call.displayName)
+                    com.kaif.mastercaller.telecom.MasterInCallService.instance?.refreshForeground()
+                },
+                enabled = call.phase == CallPhase.ACTIVE || rec.recording,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        val note = when {
+            rec.recording && rec.quality == com.kaif.mastercaller.telecom.CallRecorder.Quality.MIC_ONLY ->
+                "Recording through the microphone: put the call on Speaker so both voices are saved."
+            rec.recording -> "Recording both sides."
+            rec.error != null -> rec.error
+            rec.lastFile != null -> "Saved in ${rec.lastFile}"
+            else -> null
+        }
+        if (note != null) {
+            Text(note, style = MaterialTheme.typography.bodySmall, color = McColors.TextMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
         // Headset / Bluetooth boxes only appear when one is connected.
         val headsets = route.bluetooth + listOfNotNull(route.wired)

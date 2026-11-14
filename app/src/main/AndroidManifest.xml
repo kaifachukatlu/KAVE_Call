@@ -15,6 +15,12 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Dialer: place outgoing calls and pick a SIM on dual-SIM phones. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Keep the call alive and the Hang up button working even after swiping the app from Recents. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Fallback hang-up through Android when the app has just been restarted. -->
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <!-- Recents tab in the phone section (call history, read-only). -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
@@ -97,6 +103,7 @@
         <service
             android:name=".telecom.MasterInCallService"
             android:exported="true"
+            android:foregroundServiceType="phoneCall|microphone"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <meta-data
                 android:name="android.telecom.IN_CALL_SERVICE_UI"

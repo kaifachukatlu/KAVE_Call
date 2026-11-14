@@ -157,6 +157,46 @@ object CallManager {
         }
     }
 
+    /**
+     * Joins the calls into one conference (the network must support it). Works from either call:
+     * merges a conference's children, or conferences this call with another live call.
+     */
+    fun merge(id: String): Boolean {
+        val t = tracked[id] ?: return false
+        val c = t.call
+        return try {
+            when {
+                c.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) -> { c.mergeConference(); true }
+                c.conferenceableCalls.isNotEmpty() -> { c.conference(c.conferenceableCalls.first()); true }
+                else -> {
+                    val other = tracked.values.firstOrNull { it !== t && phaseOf(it.call.stateCompat()) in setOf(CallPhase.ACTIVE, CallPhase.HOLDING) }
+                    if (other != null) { c.conference(other.call); true } else false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "merge failed", e); false
+        }
+    }
+
+    /** Swaps between the active and the held call. */
+    fun swap(id: String) {
+        val t = tracked[id] ?: return
+        if (t.call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)) { t.call.swapConference(); return }
+        val held = tracked.values.firstOrNull { it !== t && phaseOf(it.call.stateCompat()) == CallPhase.HOLDING }
+        if (held != null) held.call.unhold() else t.call.unhold()
+    }
+
+    /** Ends the call shown in the notification, or any live call if that one is gone (e.g. after a restart). */
+    fun hangupAny(id: String?): Boolean {
+        if (id != null && hangup(id)) return true
+        val live = tracked.values.filter { phaseOf(it.call.stateCompat()) != CallPhase.DISCONNECTED }
+        var done = false
+        for (t in live) done = hangup(t.id) || done
+        return done
+    }
+
+    fun hasCalls(): Boolean = tracked.isNotEmpty()
+
     fun hold(id: String) {
         tracked[id]?.call?.hold()
     }
@@ -264,6 +304,9 @@ object CallManager {
             isPrivateNumber = !presentationAllowed,
             disconnectLabel = details.disconnectCause?.label?.toString()?.takeIf { it.isNotBlank() },
             contactResolved = resolved,
+            canMerge = details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) || call.conferenceableCalls.isNotEmpty() ||
+                tracked.values.count { phaseOf(it.call.stateCompat()) in setOf(CallPhase.ACTIVE, CallPhase.HOLDING) } >= 2,
+            isConference = details.hasProperty(Call.Details.PROPERTY_CONFERENCE),
         )
     }
 }

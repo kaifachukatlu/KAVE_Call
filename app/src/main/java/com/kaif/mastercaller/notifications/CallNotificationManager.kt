@@ -23,7 +23,11 @@ import com.kaif.mastercaller.ui.call.IncomingCallActivity
 import com.kaif.mastercaller.ui.call.OngoingCallActivity
 
 /** Incoming (full-screen, CallStyle) and ongoing call notifications. */
-class CallNotificationManager(context: Context) {
+class CallNotificationManager(
+    context: Context,
+    /** The in-call service keeps itself in the foreground with the ongoing-call notification. */
+    private val onOngoing: (Int, Notification?) -> Unit = { _, _ -> },
+) {
 
     private val appContext = context.applicationContext
     private val manager = NotificationManagerCompat.from(appContext)
@@ -106,7 +110,9 @@ class CallNotificationManager(context: Context) {
         if (call.phase == CallPhase.ACTIVE && call.connectTimeMillis > 0) {
             builder.setWhen(call.connectTimeMillis).setUsesChronometer(true).setShowWhen(true)
         }
-        post(ONGOING_ID, builder.build())
+        val n = builder.build()
+        post(ONGOING_ID, n)
+        onOngoing(ONGOING_ID, n)
     }
 
     fun cancelAll() {
@@ -125,6 +131,7 @@ class CallNotificationManager(context: Context) {
         if (ongoingKey != null) {
             manager.cancel(ONGOING_ID)
             ongoingKey = null
+            onOngoing(ONGOING_ID, null)
         }
     }
 

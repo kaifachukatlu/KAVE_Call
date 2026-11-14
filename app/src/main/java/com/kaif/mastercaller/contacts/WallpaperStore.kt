@@ -146,7 +146,7 @@ class WallpaperStore(context: Context) {
             }
         }
         val tmp = File(target.parentFile, target.name + ".tmp")
-        tmp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        tmp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 96, it) }
         tmp.renameTo(target) || (tmp.copyTo(target, overwrite = true).exists() && tmp.delete())
     } catch (e: Exception) {
         Log.w(TAG, "Could not save wallpaper", e)
@@ -163,7 +163,8 @@ class WallpaperStore(context: Context) {
 
     companion object {
         private const val TAG = "WallpaperStore"
-        private const val MAX_SIDE = 1600
+        /** Big enough for any phone screen (this one is 2408 px tall), so call wallpapers stay sharp. */
+        private const val MAX_SIDE = 2560
 
         /** Style used for the default wallpaper and contacts' own photos. */
         const val DEFAULT_STYLE_KEY = "__default__"

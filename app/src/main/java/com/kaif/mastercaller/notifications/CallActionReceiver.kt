@@ -9,11 +9,19 @@ import com.kaif.mastercaller.telecom.CallManager
 class CallActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val id = intent.getStringExtra(EXTRA_CALL_ID) ?: return
+        val id = intent.getStringExtra(EXTRA_CALL_ID)
         when (intent.action) {
-            ACTION_DECLINE -> CallManager.reject(id)
-            ACTION_HANGUP -> CallManager.hangup(id)
+            ACTION_DECLINE -> if (id == null || !CallManager.reject(id)) endViaTelecom(context)
+            ACTION_HANGUP -> if (!CallManager.hangupAny(id)) endViaTelecom(context)
         }
+    }
+
+    /** Last resort when the app was restarted and doesn't hold the call yet: ask Telecom to end it. */
+    @Suppress("DEPRECATION")
+    private fun endViaTelecom(context: Context) {
+        runCatching {
+            context.getSystemService(android.telecom.TelecomManager::class.java)?.endCall()
+        }.onFailure { android.util.Log.w("CallActionReceiver", "endCall failed", it) }
     }
 
     companion object {

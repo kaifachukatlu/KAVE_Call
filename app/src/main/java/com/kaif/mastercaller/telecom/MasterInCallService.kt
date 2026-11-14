@@ -26,13 +26,16 @@ class MasterInCallService : InCallService(), CallManager.Listener {
     override fun onCreate() {
         super.onCreate()
         assistant = IncomingCallAssistant(this)
-        notifications = CallNotificationManager(this)
+        notifications = CallNotificationManager(this) { id, n -> foreground(id, n) }
+        instance = this
         CallManager.listener = this
         AudioRouteManager.attach(this)
         AudioRouteManager.resetForNextCall()
     }
 
     override fun onDestroy() {
+        CallRecorder.stop(this)
+        if (instance === this) instance = null
         if (CallManager.listener === this) CallManager.listener = null
         CallManager.clearAll()
         AudioRouteManager.detach(this)
@@ -123,8 +126,40 @@ class MasterInCallService : InCallService(), CallManager.Listener {
 
     override fun onCallsChanged(calls: List<CallInfo>) {
         notifications.update(calls)
-        if (calls.none { it.isLive }) AudioRouteManager.resetForNextCall()
+        if (calls.none { it.isLive }) {
+            AudioRouteManager.resetForNextCall()
+            CallRecorder.stop(this)
+        }
     }
+
+    private var foregroundOn = false
+    private var lastOngoing: android.app.Notification? = null
+
+    /**
+     * While a call is live the service runs in the foreground (type "phone call"), so swiping KAVÉ Call
+     * out of Recents can't kill it and the notification's Hang up always works.
+     */
+    private fun foreground(id: Int, n: android.app.Notification?) {
+        try {
+            if (n != null) {
+                lastOngoing = n
+                val type = if (Build.VERSION.SDK_INT >= 30) {
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL or
+                        (if (CallRecorder.state.value.recording) android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0)
+                } else 0
+                androidx.core.app.ServiceCompat.startForeground(this, id, n, type)
+                foregroundOn = true
+            } else if (foregroundOn) {
+                androidx.core.app.ServiceCompat.stopForeground(this, androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE)
+                foregroundOn = false
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "foreground change failed", e)
+        }
+    }
+
+    /** Re-applies the foreground types (adds "microphone" while recording). */
+    fun refreshForeground() { lastOngoing?.let { foreground(4202, it) } }
 
     private fun launch(intent: Intent) {
         try {
@@ -134,7 +169,9 @@ class MasterInCallService : InCallService(), CallManager.Listener {
         }
     }
 
-    private companion object {
-        const val TAG = "MasterInCallService"
+    companion object {
+        private const val TAG = "MasterInCallService"
+        @Volatile var instance: MasterInCallService? = null
+            private set
     }
 }

@@ -15,8 +15,8 @@ android {
         minSdk = 29
         targetSdk = 36
         // Bump BOTH for every release; the GitHub tag must match versionName (e.g. v1.2.0).
-        versionCode = 4
-        versionName = "1.4.0"
+        versionCode = 5
+        versionName = "1.5.0"
         // Real phones are ARM; dropping x86 builds of ML Kit's native code keeps the APK much smaller.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
