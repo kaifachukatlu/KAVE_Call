@@ -309,6 +309,23 @@ fun SettingsScreen(onBack: () -> Unit, onOpenVoices: () -> Unit, onOpenSetup: ()
                     settings.vibrateWhileRinging,
                     { v -> save { it.copy(vibrateWhileRinging = v) } },
                 )
+                val gamingContext = androidx.compose.ui.platform.LocalContext.current
+                SettingSwitchRow(
+                    "Decline calls while I'm gaming",
+                    if (settings.declineWhileGaming && !com.kaif.mastercaller.telecom.GameDetector.hasUsageAccess(gamingContext))
+                        "Needs \"Usage access\" for KAVÉ Call (tap again to open it), so it can tell when a game is on screen"
+                    else "The caller is told you're busy and your game isn't interrupted. Otherwise calls show as a small pop-up while you use the phone",
+                    settings.declineWhileGaming,
+                    { v ->
+                        save { it.copy(declineWhileGaming = v) }
+                        if (v && !com.kaif.mastercaller.telecom.GameDetector.hasUsageAccess(gamingContext)) {
+                            gamingContext.startActivity(
+                                android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }
+                    },
+                )
                 SettingSwitchRow(
                     "Touch controls",
                     "Always on, so you can always answer or reject by tapping",

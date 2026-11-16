@@ -137,6 +137,25 @@ class CallNotificationManager(
         }
     }
 
+    /** Small notice after a call was declined because a game was on screen. */
+    fun showDeclinedWhileGaming(who: String?) {
+        val n = NotificationCompat.Builder(appContext, CHANNEL_ONGOING)
+            .setSmallIcon(R.drawable.ic_stat_call)
+            .setContentTitle("Declined while you were gaming")
+            .setContentText("${who ?: "A caller"} was told you're busy. Call back from Recents.")
+            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
+            .setAutoCancel(true)
+            .setColor(0xFFB9A27B.toInt())
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    appContext, 4210,
+                    Intent(appContext, com.kaif.mastercaller.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), FLAGS,
+                ),
+            )
+            .build()
+        post(4210, n)
+    }
+
     fun cancelAll() {
         cancelIncoming()
         cancelOngoing()
