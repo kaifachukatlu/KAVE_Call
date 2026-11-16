@@ -113,6 +113,14 @@ object CallManager {
     fun hasUserAction(id: String): Boolean =
         tracked[id]?.let { it.answerRequested || it.rejectRequested || it.hangupRequested } ?: true
 
+    private val answeredOnScreen = mutableSetOf<String>()
+
+    /** True when the call was answered on KAVÉ's full call screen (then the screen stays). */
+    fun answeredOnCallScreen(id: String) = id in answeredOnScreen
+
+    /** Answer from the full call screen. */
+    fun answerOnScreen(id: String): Boolean { answeredOnScreen += id; return answer(id) }
+
     /** Answer a ringing call exactly once. Returns false if it was not possible / already done. */
     fun answer(id: String): Boolean {
         val t = tracked[id] ?: return false

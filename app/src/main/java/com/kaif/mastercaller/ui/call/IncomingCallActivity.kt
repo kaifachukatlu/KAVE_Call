@@ -161,7 +161,7 @@ private fun IncomingCallRoute(requestedId: String?, onFinish: () -> Unit, onAnsw
         controlsEnabled = ringing && !acted,
         onAnswer = {
             acted = true
-            if (!CallManager.answer(shown.id)) acted = false
+            if (!CallManager.answerOnScreen(shown.id)) acted = false
         },
         onReject = {
             acted = true

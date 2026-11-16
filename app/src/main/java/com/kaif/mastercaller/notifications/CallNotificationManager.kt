@@ -51,8 +51,14 @@ class CallNotificationManager(
             appContext, call.id.hashCode(), IncomingCallActivity.intent(appContext, call.id), FLAGS,
         )
         // Answer opens an activity directly (Android 12+ forbids notification trampolines).
+        // Background calls: while the phone is in use, answer invisibly and leave the Boss in his game/app.
+        val background = com.kaif.mastercaller.MasterCallerApp.instance.settingsRepository.settings.value.backgroundCalls &&
+            com.kaif.mastercaller.telecom.GameDetector.phoneInUse(appContext)
         val answer = PendingIntent.getActivity(
-            appContext, call.id.hashCode() + 1, OngoingCallActivity.answerIntent(appContext, call.id), FLAGS,
+            appContext, call.id.hashCode() + 1,
+            if (background) CallActionActivity.intent(appContext, CallActionActivity.ACTION_ANSWER, call.id)
+            else OngoingCallActivity.answerIntent(appContext, call.id),
+            FLAGS,
         )
         // Activities, not broadcasts: some phones (vivo) block notification broadcasts.
         val decline = PendingIntent.getActivity(
@@ -135,25 +141,6 @@ class CallNotificationManager(
             ongoingKey = null
             showOngoing(primary)
         }
-    }
-
-    /** Small notice after a call was declined because a game was on screen. */
-    fun showDeclinedWhileGaming(who: String?) {
-        val n = NotificationCompat.Builder(appContext, CHANNEL_ONGOING)
-            .setSmallIcon(R.drawable.ic_stat_call)
-            .setContentTitle("Declined while you were gaming")
-            .setContentText("${who ?: "A caller"} was told you're busy. Call back from Recents.")
-            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
-            .setAutoCancel(true)
-            .setColor(0xFFB9A27B.toInt())
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    appContext, 4210,
-                    Intent(appContext, com.kaif.mastercaller.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), FLAGS,
-                ),
-            )
-            .build()
-        post(4210, n)
     }
 
     fun cancelAll() {

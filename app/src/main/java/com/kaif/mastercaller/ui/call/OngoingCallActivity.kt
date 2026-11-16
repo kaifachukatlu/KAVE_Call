@@ -124,7 +124,7 @@ class OngoingCallActivity : ComponentActivity() {
         val id = intent.getStringExtra(EXTRA_CALL_ID)
         if (id != null) callId = id
         // Answer from the notification's "Answer" button. CallManager guards against double answers.
-        if (firstLaunch && intent.action == ACTION_ANSWER && id != null) CallManager.answer(id)
+        if (firstLaunch && intent.action == ACTION_ANSWER && id != null) CallManager.answerOnScreen(id)
     }
 
     private fun setProximity(enable: Boolean) {
@@ -465,7 +465,7 @@ private fun WaitingBanner(call: CallInfo) {
         text = "${call.displayName} is calling",
         actions = {
             TextButton(onClick = { CallManager.reject(call.id) }) { Text("Decline", color = McColors.Reject) }
-            TextButton(onClick = { CallManager.answer(call.id) }) {
+            TextButton(onClick = { CallManager.answerOnScreen(call.id) }) {
                 androidx.compose.material3.Icon(Icons.Rounded.Call, null, tint = McColors.Answer)
                 Spacer(Modifier.width(4.dp))
                 Text("Answer", color = McColors.Answer)

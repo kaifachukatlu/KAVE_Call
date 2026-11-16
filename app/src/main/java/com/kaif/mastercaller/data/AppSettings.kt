@@ -29,8 +29,11 @@ data class AppSettings(
     val preferOfflineRecognition: Boolean = true,
     /** When a wallpaper is set for a contact, also save it as their photo in Contacts / Google Phone. */
     val syncWallpaperToContacts: Boolean = true,
-    /** While a game is on screen, decline incoming calls (the caller is told you're busy). */
-    val declineWhileGaming: Boolean = false,
+    /**
+     * "Background calls" (like vivo's game mode): answering from the pop-up while you're using the phone keeps
+     * you in your game/app; the call runs in the background until you open it from the notification.
+     */
+    val backgroundCalls: Boolean = true,
 ) {
     companion object {
         /** Neutral default for everyone who installs the app; change it in Settings. */

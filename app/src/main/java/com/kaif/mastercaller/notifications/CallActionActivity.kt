@@ -17,6 +17,13 @@ class CallActionActivity : Activity() {
         super.onCreate(savedInstanceState)
         val id = intent.getStringExtra(CallActionReceiver.EXTRA_CALL_ID)
         Log.i("CallActionActivity", "action=${intent.action} id=$id")
+        if (intent.action == ACTION_ANSWER) {
+            // Background call: answer and go straight back to the game/app the Boss was using.
+            if (id != null) CallManager.answer(id)
+            finishAndRemoveTask()
+            overridePendingTransition(0, 0)
+            return
+        }
         val done = when (intent.action) {
             CallActionReceiver.ACTION_DECLINE -> id != null && CallManager.reject(id)
             else -> CallManager.hangupAny(id)
@@ -33,6 +40,8 @@ class CallActionActivity : Activity() {
     }
 
     companion object {
+        const val ACTION_ANSWER = "com.kaif.mastercaller.action.ANSWER_BACKGROUND"
+
         fun intent(context: Context, action: String, callId: String): Intent =
             Intent(context, CallActionActivity::class.java).setAction(action)
                 .putExtra(CallActionReceiver.EXTRA_CALL_ID, callId)

@@ -98,15 +98,6 @@ class MasterInCallService : InCallService(), CallManager.Listener {
 
     override fun onIncomingRinging(callId: String) {
         val otherCall = CallStateManager.hasCallInProgressOtherThan(callId)
-        val settings = MasterCallerApp.instance.settingsRepository.settings.value
-        // Playing a game and the Boss chose "decline while gaming": the caller is told he's busy.
-        if (settings.declineWhileGaming && !otherCall && GameDetector.gameInFront(this)) {
-            Log.i(TAG, "declining $callId: a game is on screen")
-            val who = CallStateManager.find(callId)?.displayName
-            CallManager.reject(callId)
-            notifications.showDeclinedWhileGaming(who)
-            return
-        }
         CallStateManager.find(callId)?.let { notifications.showIncoming(it) }
         // Like Google Phone: while the phone is in use (game, video, any app) only a pop-up appears;
         // the full call screen opens when the phone is locked or the screen is off.
@@ -125,7 +116,9 @@ class MasterInCallService : InCallService(), CallManager.Listener {
     override fun onIncomingCallAnswered(callId: String) {
         val settings = MasterCallerApp.instance.settingsRepository.settings.value
         AudioRouteManager.onIncomingCallAnswered(settings.autoSpeaker)
-        launch(OngoingCallActivity.intent(this, callId))
+        // Background call: answered from the pop-up while using another app or playing → stay there.
+        val stayInApp = settings.backgroundCalls && GameDetector.phoneInUse(this) && !CallManager.answeredOnCallScreen(callId)
+        if (!stayInApp) launch(OngoingCallActivity.intent(this, callId))
     }
 
     override fun onOutgoingCallStarted(callId: String) {

@@ -51,7 +51,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val ANNOUNCE_NUMBER = booleanPreferencesKey("announce_number")
         val VOICE_PREF = stringPreferencesKey("voice_preference")
         val SYNC_CONTACT_PHOTO = booleanPreferencesKey("sync_wallpaper_to_contacts")
-        val GAME_DECLINE = booleanPreferencesKey("decline_while_gaming")
+        val BACKGROUND_CALLS = booleanPreferencesKey("background_calls")
     }
 
     /** Cold flow straight from disk; first emission is the real stored value. */
@@ -120,7 +120,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         prefs[Keys.ANNOUNCE_NUMBER] = s.announceNumber
         prefs[Keys.VOICE_PREF] = s.voicePreference.name
         prefs[Keys.SYNC_CONTACT_PHOTO] = s.syncWallpaperToContacts
-        prefs[Keys.GAME_DECLINE] = s.declineWhileGaming
+        prefs[Keys.BACKGROUND_CALLS] = s.backgroundCalls
     }
 
     private fun Preferences.toSettings(): AppSettings {
@@ -146,7 +146,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             announceNumber = this[Keys.ANNOUNCE_NUMBER] ?: d.announceNumber,
             voicePreference = VoicePreference.entries.firstOrNull { it.name == this[Keys.VOICE_PREF] } ?: d.voicePreference,
             syncWallpaperToContacts = this[Keys.SYNC_CONTACT_PHOTO] ?: d.syncWallpaperToContacts,
-            declineWhileGaming = this[Keys.GAME_DECLINE] ?: d.declineWhileGaming,
+            backgroundCalls = this[Keys.BACKGROUND_CALLS] ?: d.backgroundCalls,
         )
     }
 }
