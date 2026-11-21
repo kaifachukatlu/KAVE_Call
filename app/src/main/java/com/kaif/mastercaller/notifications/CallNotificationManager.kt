@@ -66,6 +66,26 @@ class CallNotificationManager(
             CallActionActivity.intent(appContext, CallActionReceiver.ACTION_DECLINE, call.id), FLAGS,
         )
         val person = Person.Builder().setName(call.displayName).setImportant(true).build()
+        if (background) {
+            // Phone in use (game, video, any app): a plain heads-up pop-up with real Answer / Decline buttons and
+            // no full-screen request, so the game stays in front. Tapping the pop-up itself opens the call screen.
+            val popup = NotificationCompat.Builder(appContext, CHANNEL_INCOMING)
+                .setSmallIcon(R.drawable.ic_stat_call)
+                .setContentTitle(call.displayName)
+                .setContentText(call.formattedNumber?.takeIf { call.contactName != null } ?: "Incoming call")
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setColor(0xFFB9A27B.toInt())
+                .setContentIntent(fullScreen)
+                .addAction(NotificationCompat.Action.Builder(null, "Decline", decline).build())
+                .addAction(NotificationCompat.Action.Builder(null, "Answer", answer).build())
+                .build()
+            post(INCOMING_ID, popup)
+            return
+        }
         val notification = NotificationCompat.Builder(appContext, CHANNEL_INCOMING)
             .setSmallIcon(R.drawable.ic_stat_call)
             .setContentTitle(call.displayName)

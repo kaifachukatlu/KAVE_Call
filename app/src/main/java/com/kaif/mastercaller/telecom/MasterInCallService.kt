@@ -87,6 +87,11 @@ class MasterInCallService : InCallService(), CallManager.Listener {
     override fun onBringToForeground(showDialpad: Boolean) {
         super.onBringToForeground(showDialpad)
         val ringing = CallStateManager.ringing()
+        val settings = MasterCallerApp.instance.settingsRepository.settings.value
+        Log.i(TAG, "bringToForeground ringing=${ringing?.id} inUse=${GameDetector.phoneInUse(this)}")
+        if (ringing != null && settings.backgroundCalls && GameDetector.phoneInUse(this)) {
+            return // phone in use: the pop-up handles it, don't take over the screen
+        }
         if (ringing != null) {
             launch(IncomingCallActivity.intent(this, ringing.id))
         } else {
@@ -101,7 +106,9 @@ class MasterInCallService : InCallService(), CallManager.Listener {
         CallStateManager.find(callId)?.let { notifications.showIncoming(it) }
         // Like Google Phone: while the phone is in use (game, video, any app) only a pop-up appears;
         // the full call screen opens when the phone is locked or the screen is off.
-        if (!GameDetector.phoneInUse(this)) launch(IncomingCallActivity.intent(this, callId))
+        val inUse = GameDetector.phoneInUse(this)
+        Log.i(TAG, "incoming $callId inUse=$inUse backgroundCalls=${MasterCallerApp.instance.settingsRepository.settings.value.backgroundCalls}")
+        if (!inUse) launch(IncomingCallActivity.intent(this, callId))
         assistant.onIncomingRinging(callId, otherCall)
     }
 

@@ -19,7 +19,8 @@ class CallActionActivity : Activity() {
         Log.i("CallActionActivity", "action=${intent.action} id=$id")
         if (intent.action == ACTION_ANSWER) {
             // Background call: answer and go straight back to the game/app the Boss was using.
-            if (id != null) CallManager.answer(id)
+            val ok = id != null && CallManager.answer(id)
+            Log.i("CallActionActivity", "background answer id=$id ok=$ok")
             finishAndRemoveTask()
             overridePendingTransition(0, 0)
             return
